@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { 
   Box, 
   Container, 
@@ -10,101 +11,48 @@ import {
   Button, 
   VStack, 
   HStack, 
-  Checkbox, 
   Divider, 
-  useToast,
   InputGroup,
   InputRightElement,
   IconButton,
-  FormHelperText
+  FormHelperText,
+  FormErrorMessage
 } from '@chakra-ui/react'
 import { FiEye, FiEyeOff, FiCheck, FiX } from 'react-icons/fi'
-import { Link as RouterLink, useNavigate } from 'react-router-dom'
-
+import { Link as RouterLink} from 'react-router-dom'
+import { useRegister } from '../shared/hooks/useRegister'
 function Register() {
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    agreeTerms: false
-  })
-  
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  
-  const navigate = useNavigate()
-  const toast = useToast()
-  
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value
-    })
-  }
+  const { registerUser,  isRegisterLoading } = useRegister()
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors }
+  } = useForm({
+    defaultValues: {
+      nombre: '',
+      email: '',
+      password: '',
+      confirmPassword: ''
+    },
+    mode: 'onBlur'
+  })
+
+  const password = watch('password')
   
   const passwordRequirements = [
-    { text: 'At least 8 characters', met: formData.password.length >= 8 },
-    { text: 'At least one uppercase letter', met: /[A-Z]/.test(formData.password) },
-    { text: 'At least one number', met: /[0-9]/.test(formData.password) },
-    { text: 'Passwords match', met: formData.password && formData.password === formData.confirmPassword }
+    { text: 'At least 8 characters', met: password?.length >= 8 },
+    { text: 'At least one uppercase letter', met: /[A-Z]/.test(password) },
+    { text: 'At least one number', met: /[0-9]/.test(password) },
+    { text: 'Passwords match', met: password && password === watch('confirmPassword') }
   ]
-  
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
-      toast({
-        title: 'Error',
-        description: 'Please fill in all required fields',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      })
-      return
-    }
-    
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: 'Error',
-        description: 'Passwords do not match',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      })
-      return
-    }
-    
-    if (!formData.agreeTerms) {
-      toast({
-        title: 'Error',
-        description: 'Please agree to the terms and conditions',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      })
-      return
-    }
-    
-    setIsLoading(true)
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      
-      toast({
-        title: 'Registration Successful',
-        description: 'Your account has been created successfully!',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      })
-      
-      navigate('/login')
-    }, 1500)
+
+  const onSubmit = async (data) => {
+    console.log(data)
+    await registerUser(data)
   }
   
   return (
@@ -126,47 +74,58 @@ function Register() {
               </Text>
             </Box>
             
-            <Box as="form" onSubmit={handleSubmit}>
+            <Box as="form" onSubmit={handleSubmit(onSubmit)}>
               <VStack spacing={4} align="stretch">
-                <HStack spacing={4}>
-                  <FormControl isRequired>
-                    <FormLabel>First Name</FormLabel>
-                    <Input 
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                    />
-                  </FormControl>
-                  
-                  <FormControl isRequired>
-                    <FormLabel>Last Name</FormLabel>
-                    <Input 
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                    />
-                  </FormControl>
-                </HStack>
+                <FormControl isRequired isInvalid={errors.nombre}>
+                  <FormLabel>First Name</FormLabel>
+                  <Input 
+                    {...register('nombre', { 
+                      required: 'First name is required',
+                      minLength: {
+                        value: 2,
+                        message: 'First name must be at least 2 characters'
+                      }
+                    })}
+                  />
+                  <FormErrorMessage>
+                    {errors.nombre && errors.nombre.message}
+                  </FormErrorMessage>
+                </FormControl>
                 
-                <FormControl isRequired>
+                <FormControl isRequired isInvalid={errors.email}>
                   <FormLabel>Email Address</FormLabel>
                   <Input 
                     type="email" 
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
+                    {...register('email', {
+                      required: 'Email is required',
+                      pattern: {
+                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        message: 'Invalid email address'
+                      }
+                    })}
                   />
-                  <FormHelperText>We'll never share your email.</FormHelperText>
+                  <FormHelperText>We&apos;ll never share your email.</FormHelperText>
+                  <FormErrorMessage>
+                    {errors.email && errors.email.message}
+                  </FormErrorMessage>
                 </FormControl>
                 
-                <FormControl isRequired>
+                <FormControl isRequired isInvalid={errors.password}>
                   <FormLabel>Password</FormLabel>
                   <InputGroup>
                     <Input 
                       type={showPassword ? 'text' : 'password'} 
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
+                      {...register('password', {
+                        required: 'Password is required',
+                        minLength: {
+                          value: 8,
+                          message: 'Password must be at least 8 characters'
+                        },
+                        pattern: {
+                          value: /^(?=.*[A-Z])(?=.*\d).*$/,
+                          message: 'Password must contain at least one uppercase letter and one number'
+                        }
+                      })}
                     />
                     <InputRightElement>
                       <IconButton
@@ -178,16 +137,21 @@ function Register() {
                       />
                     </InputRightElement>
                   </InputGroup>
+                  <FormErrorMessage>
+                    {errors.password && errors.password.message}
+                  </FormErrorMessage>
                 </FormControl>
                 
-                <FormControl isRequired>
+                <FormControl isRequired isInvalid={errors.confirmPassword}>
                   <FormLabel>Confirm Password</FormLabel>
                   <InputGroup>
                     <Input 
                       type={showConfirmPassword ? 'text' : 'password'} 
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
+                      {...register('confirmPassword', {
+                        required: 'Please confirm your password',
+                        validate: value => 
+                          value === password || 'The passwords do not match'
+                      })}
                     />
                     <InputRightElement>
                       <IconButton
@@ -199,6 +163,9 @@ function Register() {
                       />
                     </InputRightElement>
                   </InputGroup>
+                  <FormErrorMessage>
+                    {errors.confirmPassword && errors.confirmPassword.message}
+                  </FormErrorMessage>
                 </FormControl>
                 
                 <Box>
@@ -215,30 +182,13 @@ function Register() {
                   </VStack>
                 </Box>
                 
-                <FormControl>
-                  <Checkbox 
-                    name="agreeTerms"
-                    isChecked={formData.agreeTerms}
-                    onChange={handleInputChange}
-                  >
-                    I agree to the{' '}
-                    <Text as="span" color="brand.500">
-                      Terms of Service
-                    </Text>{' '}
-                    and{' '}
-                    <Text as="span" color="brand.500">
-                      Privacy Policy
-                    </Text>
-                  </Checkbox>
-                </FormControl>
-                
                 <Button 
                   type="submit" 
                   colorScheme="teal" 
                   size="lg" 
                   w="100%"
                   mt={2}
-                  isLoading={isLoading}
+                  isLoading={isRegisterLoading}
                   loadingText="Creating Account"
                 >
                   Create Account

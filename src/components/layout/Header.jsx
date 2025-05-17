@@ -15,11 +15,19 @@ import {
   DrawerContent,
   DrawerCloseButton,
   VStack,
-  useColorModeValue
+  useColorModeValue,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Avatar
 } from '@chakra-ui/react'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
-import { FiMenu } from 'react-icons/fi'
+import { FiMenu, FiUser, FiLogOut } from 'react-icons/fi'
 import { BedDoubleIcon } from 'lucide-react'
+import useAuthStore from '../../shared/stores/authStore'
+import useLogin from '../../shared/hooks/useLogin'
+
 const NavLink = ({ children, to, isActive }) => {
   return (
     <Link
@@ -51,11 +59,13 @@ const NavLink = ({ children, to, isActive }) => {
   )
 }
 
-
 function Header() {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const location = useLocation()
   const [scrolled, setScrolled] = useState(false)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const user = useAuthStore((state) => state.user)
+  const { logout } = useLogin()
   
   const handleScroll = () => {
     const offset = window.scrollY
@@ -145,18 +155,52 @@ function Header() {
               </NavLink>
             ))}
           </HStack>
-          <Button 
-            as={RouterLink} 
-            to="/login"
-            variant="solid" 
-            size="sm" 
-            bg="brand.500" 
-            color="white"
-            _hover={{ bg: 'brand.600' }}
-            display={{ base: 'none', md: 'inline-flex' }}
-          >
-            Login
-          </Button>
+          
+          {isAuthenticated ? (
+            <Menu>
+              <MenuButton
+                as={Button}
+                rounded="full"
+                variant="link"
+                cursor="pointer"
+                minW={0}
+              >
+                <Avatar
+                  size="sm"
+                  name={user?.nombre}
+                  src={user?.avatar}
+                />
+              </MenuButton>
+              <MenuList>
+                <MenuItem
+                  as={RouterLink}
+                  to="/profile"
+                  icon={<FiUser />}
+                >
+                  Mi Perfil
+                </MenuItem>
+                <MenuItem
+                  onClick={logout}
+                  icon={<FiLogOut />}
+                >
+                  Cerrar Sesión
+                </MenuItem>
+              </MenuList>
+            </Menu>
+          ) : (
+            <Button 
+              as={RouterLink} 
+              to="/login"
+              variant="solid" 
+              size="sm" 
+              bg="brand.500" 
+              color="white"
+              _hover={{ bg: 'brand.600' }}
+              display={{ base: 'none', md: 'inline-flex' }}
+            >
+              Login
+            </Button>
+          )}
         </HStack>
 
         <IconButton
@@ -181,17 +225,37 @@ function Header() {
                     {link.name}
                   </Link>
                 ))}
-                <Button 
-                  as={RouterLink} 
-                  to="/login"
-                  variant="solid" 
-                  size="sm" 
-                  colorScheme="teal" 
-                  w="100%" 
-                  onClick={onClose}
-                >
-                  Login
-                </Button>
+                {isAuthenticated ? (
+                  <>
+                    <Link as={RouterLink} to="/profile" onClick={onClose}>
+                      Mi Perfil
+                    </Link>
+                    <Button 
+                      variant="solid" 
+                      size="sm" 
+                      colorScheme="red" 
+                      w="100%" 
+                      onClick={() => {
+                        logout()
+                        onClose()
+                      }}
+                    >
+                      Cerrar Sesión
+                    </Button>
+                  </>
+                ) : (
+                  <Button 
+                    as={RouterLink} 
+                    to="/login"
+                    variant="solid" 
+                    size="sm" 
+                    colorScheme="teal" 
+                    w="100%" 
+                    onClick={onClose}
+                  >
+                    Login
+                  </Button>
+                )}
               </VStack>
             </DrawerBody>
           </DrawerContent>

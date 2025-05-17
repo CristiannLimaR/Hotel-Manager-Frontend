@@ -6,20 +6,12 @@ import {
   Button, 
   SimpleGrid, 
   Flex, 
-  Image, 
   Badge, 
-  HStack, 
-  VStack, 
-  Icon, 
-  Link,
   Input,
-  InputGroup,
-  InputLeftElement,
-  Stack,
   useBreakpointValue
 } from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
-import { FiSearch, FiMapPin, FiCalendar, FiUsers, FiArrowRight, FiStar } from 'react-icons/fi'
+import { FiArrowRight } from 'react-icons/fi'
 import SearchBar from '../components/common/SearchBar'
 import HotelCard from '../components/hotels/HotelCard'
 import OfferCard from '../components/offers/OfferCard'
@@ -27,17 +19,17 @@ import TestimonialCard from '../components/testimonials/TestimonialCard'
 import { hotels } from '../data/hotels'
 import { offers } from '../data/offers'
 import { testimonials } from '../data/testimonials'
-
+import useAuthStore from '../shared/stores/authStore'
 function Home() {
   const heroImageHeight = useBreakpointValue({ base: '500px', md: '600px', lg: '650px' })
   const heroTextWidth = useBreakpointValue({ base: '100%', md: '80%', lg: '60%' })
+  const user = useAuthStore((state) => state.user)
+  console.log(user)
   
-  // Filter featured hotels
   const featuredHotels = hotels.filter(hotel => hotel.featured).slice(0, 4)
   
   return (
     <Box>
-      {/* Hero Section */}
       <Box 
         position="relative" 
         h={heroImageHeight} 
@@ -112,8 +104,7 @@ function Home() {
           </Box>
         </Container>
       </Box>
-      
-      {/* Featured Destinations Section */}
+
       <Box py={16} bg="gray.50">
         <Container maxW="1200px">
           <Heading 
@@ -156,7 +147,6 @@ function Home() {
         </Container>
       </Box>
       
-      {/* Exclusive Offers Section */}
       <Box py={16}>
         <Container maxW="1200px">
           <Flex 
@@ -194,7 +184,6 @@ function Home() {
         </Container>
       </Box>
       
-      {/* Testimonials Section */}
       <Box py={16} bg="gray.50">
         <Container maxW="1200px">
           <Heading 
@@ -225,7 +214,6 @@ function Home() {
         </Container>
       </Box>
       
-      {/* Newsletter Section */}
       <Box py={16} bg="navy.900" color="white">
         <Container maxW="1200px">
           <Box 

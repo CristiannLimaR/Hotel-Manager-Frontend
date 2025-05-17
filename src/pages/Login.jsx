@@ -11,40 +11,24 @@ import {
   Button, 
   VStack, 
   Divider, 
-  useToast,
   InputGroup,
   InputRightElement,
   IconButton,
   FormErrorMessage
 } from '@chakra-ui/react'
 import { FiEye, FiEyeOff } from 'react-icons/fi'
-import { Link as RouterLink, useNavigate } from 'react-router-dom'
-
+import { Link as RouterLink } from 'react-router-dom'
+import useLogin from '../shared/hooks/useLogin'
 function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  
-  const navigate = useNavigate()
-  const toast = useToast()
+  const { login } = useLogin()
   
   const { register, handleSubmit, formState: { errors } } = useForm()
   
-  const onSubmit = (data) => {
-    setIsLoading(true)
+  const onSubmit = async (data) => {
+    await login(data)
     
-    setTimeout(() => {
-      setIsLoading(false)
-      
-      toast({
-        title: 'Login Successful',
-        description: 'Welcome back to QuickStay!',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      })
-      
-      navigate('/')
-    }, 1500)
   }
   
   return (
