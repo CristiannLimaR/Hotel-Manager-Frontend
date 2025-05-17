@@ -3,7 +3,6 @@ import {
   Box, 
   Flex, 
   Button, 
-  Image, 
   HStack, 
   Link, 
   useDisclosure,

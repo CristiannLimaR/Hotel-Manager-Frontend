@@ -32,6 +32,8 @@ const useLogin = () => {
     
     loginStore(user, token);
 
+
+
     setLoading(false);
     toast({
       title: "Inicio de sesión exitoso",
@@ -41,7 +43,13 @@ const useLogin = () => {
       isClosable: true,
     });
 
-    navigate("/");
+    if(user.role === "MANAGER_ROLE"){
+      navigate("/admin/hotel");
+    }else if(user.role === "ADMIN_ROLE"){
+      navigate("/admin/platform");
+    }else {
+      navigate("/");
+    }
     return { success: true };
   };
 
