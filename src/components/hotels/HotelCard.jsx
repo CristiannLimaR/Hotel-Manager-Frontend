@@ -1,0 +1,145 @@
+/* eslint-disable react/prop-types */
+import { 
+  Box, 
+  Image, 
+  Heading, 
+  Text, 
+  Flex, 
+  Badge, 
+  Button, 
+  HStack, 
+  Icon, 
+  useColorModeValue
+} from '@chakra-ui/react'
+import { FiStar, FiMapPin, FiUser } from 'react-icons/fi'
+import { Link as RouterLink } from 'react-router-dom'
+
+
+function HotelCard({ hotel }) {
+  const {
+    id,
+    name,
+    location,
+    price,
+    rating,
+    image,
+    rooms,
+    capacity,
+    bestSeller
+  } = hotel
+  
+  const cardBg = useColorModeValue('white', 'gray.800')
+  const priceBg = useColorModeValue('gray.100', 'gray.700')
+  
+  return (
+    <Box 
+      borderRadius="lg" 
+      overflow="hidden" 
+      bg={cardBg} 
+      boxShadow="md" 
+      transition="all 0.3s"
+      _hover={{ 
+        transform: 'translateY(-4px)', 
+        boxShadow: 'lg' 
+      }}
+    >
+      <Box position="relative">
+        <Image 
+          src={image} 
+          alt={name} 
+          h="200px" 
+          w="100%" 
+          objectFit="cover" 
+        />
+        
+        {bestSeller && (
+          <Badge 
+            position="absolute" 
+            top={3} 
+            left={3} 
+            bg="accent.500" 
+            color="white" 
+            fontSize="xs" 
+            fontWeight="medium" 
+            px={2} 
+            py={1} 
+            borderRadius="full"
+          >
+            Best Seller
+          </Badge>
+        )}
+        
+        <Flex 
+          position="absolute" 
+          bottom={3} 
+          right={3} 
+          bg="white" 
+          color="accent.500" 
+          p={1} 
+          borderRadius="md" 
+          alignItems="center" 
+          boxShadow="sm"
+        >
+          <Icon as={FiStar} mr={1} />
+          <Text fontWeight="bold" fontSize="sm">
+            {rating}
+          </Text>
+        </Flex>
+      </Box>
+      
+      <Box p={4}>
+        <Heading 
+          fontSize="lg" 
+          fontWeight="bold" 
+          isTruncated 
+          mb={1}
+        >
+          {name}
+        </Heading>
+        
+        <Flex align="center" mb={2}>
+          <Icon as={FiMapPin} color="gray.500" fontSize="sm" mr={1} />
+          <Text color="gray.500" fontSize="sm">
+            {location}
+          </Text>
+        </Flex>
+        
+        <HStack spacing={2} mb={3}>
+          <Flex align="center">
+            <Icon as={FiUser} color="gray.500" fontSize="sm" mr={1} />
+            <Text fontSize="xs" color="gray.500">{capacity} guests</Text>
+          </Flex>
+          <Text fontSize="xs" color="gray.500">{rooms} rooms</Text>
+        </HStack>
+        
+        <Flex justify="space-between" align="center" mt={3}>
+          <Box>
+            <Text fontSize="xs" color="gray.500">
+              Starting from
+            </Text>
+            <Flex align="baseline">
+              <Text fontSize="xl" fontWeight="bold" color="brand.500">
+                ${price}
+              </Text>
+              <Text fontSize="sm" color="gray.500" ml={1}>
+                /night
+              </Text>
+            </Flex>
+          </Box>
+          
+          <Button 
+            as={RouterLink} 
+            to={`/hotels/${id}`}
+            size="sm" 
+            colorScheme="teal" 
+            variant="outline"
+          >
+            Book Now
+          </Button>
+        </Flex>
+      </Box>
+    </Box>
+  )
+}
+
+export default HotelCard
