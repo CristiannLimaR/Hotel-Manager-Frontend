@@ -27,6 +27,34 @@ import {
     const isEdit = Boolean(hotelData);
     const toast = useToast();
     const [selectedAdmin, setSelectedAdmin] = useState(null);
+
+    const facilitiesOptions = [
+      { value: "Wifi", label: "Wifi" },
+      { value: "Piscina", label: "Piscina" },
+      { value: "Estacionamiento", label: "Estacionamiento" },
+      { value: "Parking Privado", label: "Parking Privado" },
+      { value: "Recepción 24h", label: "Recepción 24h" },
+      { value: "Calefacción", label: "Calefacción" },
+      { value: "Aire Acondicionado", label: "Aire Acondicionado" },
+      { value: "Habitaciones Privadas", label: "Habitaciones Privadas" },
+      { value: "Servicios Premium", label: "Servicios Premium" },
+      { value: "Gimnasio", label: "Gimnasio" },
+      { value: "Spa", label: "Spa" },
+      { value: "Restaurante", label: "Restaurante" },
+      { value: "Bar", label: "Bar" },
+      { value: "Terraza", label: "Terraza" },
+      { value: "Jardín", label: "Jardín" },
+      { value: "Salas de Reuniones", label: "Salas de Reuniones" },
+      { value: "Servicio de Limpieza", label: "Servicio de Limpieza" },
+      { value: "Servicio de Lavandería", label: "Servicio de Lavandería" },
+      { value: "Servicio de Concierge", label: "Servicio de Concierge" },
+      { value: "Servicio de Traslado", label: "Servicio de Traslado" },
+      { value: "Caja Fuerte", label: "Caja Fuerte" },
+      { value: "Ascensor", label: "Ascensor" },
+      { value: "Acceso para Discapacitados", label: "Acceso para Discapacitados" },
+      { value: "Mascotas Permitidas", label: "Mascotas Permitidas" },
+    ];
+
     const {
       register,
       handleSubmit,
@@ -44,7 +72,6 @@ import {
           max: '',
         },
         facilities: [],
-        services: [],
       },
     });
   
@@ -67,7 +94,6 @@ import {
             max: hotelData.rangeOfPrices?.max || '',
           },
           facilities: hotelData.facilities || [],
-          services: hotelData.services || [],
         });
         // Extraer solo los nombres de archivo de las URLs
         const imageUrls = hotelData.images || [];
@@ -123,12 +149,9 @@ import {
         };
         formData.append('rangeOfPrices', JSON.stringify(rangeOfPrices));
 
-        // Asegurarse de que facilities y services sean arrays
+        // Asegurarse de que facilities sea un array
         const facilities = Array.isArray(data.facilities) ? data.facilities : [];
-        const services = Array.isArray(data.services) ? data.services : [];
-        
         formData.append('facilities', JSON.stringify(facilities));
-        formData.append('services', JSON.stringify(services));
 
         // Imágenes nuevas
         newImages.forEach(img => formData.append('images', img));
@@ -319,32 +342,19 @@ import {
           <GridItem colSpan={2}>
             <FormControl isInvalid={errors.facilities}>
               <FormLabel>Instalaciones</FormLabel>
-              <SimpleGrid columns={[2, 3]} spacing={2}>
-                <Checkbox {...register('facilities')} value="Wifi">Wifi</Checkbox>
-                <Checkbox {...register('facilities')} value="Piscina">Piscina</Checkbox>
-                <Checkbox {...register('facilities')} value="Estacionamiento">Estacionamiento</Checkbox>
-                <Checkbox {...register('facilities')} value="Habitaciones Privadas">Habitaciones Privadas</Checkbox>
-                <Checkbox {...register('facilities')} value="Servicios Premium">Servicios Premium</Checkbox>
+              <SimpleGrid columns={[2, 3, 4]} spacing={2}>
+                {facilitiesOptions.map((facility) => (
+                  <Checkbox
+                    key={facility.value}
+                    {...register('facilities')}
+                    value={facility.value}
+                  >
+                    {facility.label}
+                  </Checkbox>
+                ))}
               </SimpleGrid>
               <FormErrorMessage>
                 {errors.facilities && errors.facilities.message}
-              </FormErrorMessage>
-            </FormControl>
-          </GridItem>
-
-          <GridItem colSpan={2}>
-            <FormControl isInvalid={errors.services}>
-              <FormLabel>Servicios</FormLabel>
-              <SimpleGrid columns={[2, 3]} spacing={2}>
-                <Checkbox {...register('services')} value="Desayuno">Desayuno</Checkbox>
-                <Checkbox {...register('services')} value="Gimnasio">Gimnasio</Checkbox>
-                <Checkbox {...register('services')} value="Spa">Spa</Checkbox>
-                <Checkbox {...register('services')} value="Room Service">Room Service</Checkbox>
-                <Checkbox {...register('services')} value="Lavandería">Lavandería</Checkbox>
-                <Checkbox {...register('services')} value="Servicio de Concierge">Servicio de Concierge</Checkbox>
-              </SimpleGrid>
-              <FormErrorMessage>
-                {errors.services && errors.services.message}
               </FormErrorMessage>
             </FormControl>
           </GridItem>

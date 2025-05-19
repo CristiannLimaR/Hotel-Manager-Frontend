@@ -12,7 +12,7 @@ const useHotel = () => {
         if(response.error) {
             toast({
                 title: "Error",
-                description: "ffsdfsdfs",
+                description: response.e.message,
                 status: "error",
                 duration: 3000,
                 isClosable: true,
@@ -97,14 +97,38 @@ const useHotel = () => {
 
         setIsLoading(false);
     }
+    const deleteHotel = async (id) => { 
+        setIsLoading(true);
+        const response = await deleteHotelRequest(id);
+        if(response.error) {
+            toast({
+                title: "Error",
+                description: response.e.message,
+                status: "error",
+                duration: 3000,
+                isClosable: true,
+            });
+            setIsLoading(false);
+            return;
+        }
 
+        toast({
+            title: "Hotel eliminado",
+            description: "Hotel eliminado correctamente",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+        }); 
 
-
+        setIsLoading(false);
+    }
+        
     return {
         getHotels,
         getHotelsByAdmin,
         saveHotel,
         editHotel,
+        deleteHotel,
         isLoading,
     }
 }

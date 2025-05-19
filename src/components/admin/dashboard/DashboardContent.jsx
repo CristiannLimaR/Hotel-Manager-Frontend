@@ -27,7 +27,7 @@ import { useEffect, useState } from "react";
 const DashboardContent = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { isOpen: isGalleryOpen, onOpen: onGalleryOpen, onClose: onGalleryClose } = useDisclosure();
-  const { getHotelsByAdmin, updateHotel } = useHotel();
+  const { getHotelsByAdmin, editHotel } = useHotel();
   const [hotelData, setHotelData] = useState({});
   const toast = useToast();
 
@@ -35,6 +35,7 @@ const DashboardContent = () => {
     try {
       const data = await getHotelsByAdmin();
       setHotelData(data);
+      console.log(data);
     } catch (error) {
       toast({
         title: "Error",
@@ -52,7 +53,7 @@ const DashboardContent = () => {
 
   const handleEditSuccess = async (formData) => {
     try {
-      await updateHotel(hotelData._id, formData);
+      await editHotel(hotelData.uid, formData);
       await fetchHotelData();
       onClose();
       toast({
@@ -63,6 +64,7 @@ const DashboardContent = () => {
         isClosable: true,
       });
     } catch (error) {
+      console.log(error);
       toast({
         title: "Error",
         description: "No se pudo actualizar el hotel",
