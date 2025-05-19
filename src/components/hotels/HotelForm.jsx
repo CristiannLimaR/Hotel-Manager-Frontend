@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import {
     Box,
     Button,
@@ -20,14 +21,12 @@ import {
   import { useForm } from 'react-hook-form';
   import { useState, useEffect } from 'react';
   import { FiPlus, FiX } from 'react-icons/fi';
-  import PropTypes from 'prop-types';
   import AdminSearch from './AdminSearch';
   
   const HotelForm = ({ hotelData = null, onSuccess }) => {
     const isEdit = Boolean(hotelData);
     const toast = useToast();
     const [selectedAdmin, setSelectedAdmin] = useState(null);
-  
     const {
       register,
       handleSubmit,
@@ -52,9 +51,9 @@ import {
     const [existingImages, setExistingImages] = useState([]);
     const [newImages, setNewImages] = useState([]);
     const [previewUrls, setPreviewUrls] = useState([]);
+    const [deletedImages, setDeletedImages] = useState([]);
   
     const minPrice = watch('rangeOfPrices.min');
-    
     const maxPrice = watch('rangeOfPrices.max');
   
     useEffect(() => {
@@ -70,23 +69,27 @@ import {
           facilities: hotelData.facilities || [],
           services: hotelData.services || [],
         });
-        setExistingImages(hotelData.images || []);
-        setSelectedAdmin(hotelData.admin || null);
+        // Extraer solo los nombres de archivo de las URLs
+        const imageUrls = hotelData.images || [];
+        setExistingImages(imageUrls);
+        
+        if (hotelData.admin) {
+          setSelectedAdmin({
+            id: hotelData.admin._id || hotelData.admin,
+            nombre: hotelData.admin.nombre || '',
+            email: hotelData.admin.email || ''
+          });
+        }
       }
     }, [hotelData, reset]);
 
     useEffect(() => {
-      if (minPrice && maxPrice && Number(minPrice) >= Number(maxPrice)) {
-        setValue('rangeOfPrices.max', '', { shouldValidate: true });
-      }
-    }, [minPrice, maxPrice, setValue]);
-
-    useEffect(() => {
-      // Crear URLs de vista previa para las nuevas imágenes
+      // Limpiar las URLs anteriores antes de crear nuevas
+      previewUrls.forEach(url => URL.revokeObjectURL(url));
+      
       const urls = newImages.map(file => URL.createObjectURL(file));
       setPreviewUrls(urls);
 
-      // Limpiar URLs cuando el componente se desmonte o las imágenes cambien
       return () => {
         urls.forEach(url => URL.revokeObjectURL(url));
       };
@@ -94,36 +97,59 @@ import {
   
     const onSubmit = async (data) => {
       try {
+        if (!selectedAdmin) {
+          toast({
+            title: 'Error',
+            description: 'Debe seleccionar un administrador',
+            status: 'error',
+            duration: 4000,
+            isClosable: true,
+          });
+          return;
+        }
+
         const formData = new FormData();
-  
+
+        // Datos básicos
         formData.append('name', data.name);
         formData.append('direction', data.direction);
         formData.append('category', data.category);
-        formData.append('rangeOfPrices[min]', data.rangeOfPrices.min);
-        formData.append('rangeOfPrices[max]', data.rangeOfPrices.max);
-        if (selectedAdmin) {
-          formData.append('adminId', selectedAdmin.id);
-        }
-  
-        data.facilities?.forEach((s) => formData.append('facilities', s));
-        data.services?.forEach((s) => formData.append('services', s));
-        existingImages.forEach((url) => formData.append('existingImages', url));
-        newImages.forEach((file) => formData.append('images', file));
+        formData.append('admin', selectedAdmin.id || selectedAdmin._id);
 
-        // Aquí iría la llamada a la API para guardar el hotel
-        // const response = await saveHotel(formData);
+        // Datos que necesitan ser serializados
+        const rangeOfPrices = {
+          min: data.rangeOfPrices.min,
+          max: data.rangeOfPrices.max
+        };
+        formData.append('rangeOfPrices', JSON.stringify(rangeOfPrices));
+
+        // Asegurarse de que facilities y services sean arrays
+        const facilities = Array.isArray(data.facilities) ? data.facilities : [];
+        const services = Array.isArray(data.services) ? data.services : [];
         
-        toast({
-          title: isEdit ? 'Hotel actualizado' : 'Hotel creado',
-          description: isEdit ? 'El hotel se ha actualizado correctamente' : 'El hotel se ha creado correctamente',
-          status: 'success',
-          duration: 4000,
-          isClosable: true,
-        });
+        formData.append('facilities', JSON.stringify(facilities));
+        formData.append('services', JSON.stringify(services));
 
-        if (onSuccess) {
-          onSuccess();
+        // Imágenes nuevas
+        newImages.forEach(img => formData.append('images', img));
+
+        // Si estamos editando, agregar información sobre las imágenes
+        if (isEdit) {
+          // Enviar cada imagen existente como un campo separado
+          existingImages.forEach((img, index) => {
+            formData.append(`existingImages[${index}]`, img);
+          });
+          
+          // Enviar las imágenes eliminadas
+          if (deletedImages.length > 0) {
+            console.log('Imágenes a eliminar:', deletedImages);
+            deletedImages.forEach((img, index) => {
+              formData.append(`deletedImages[${index}]`, img);
+            });
+          }
         }
+
+        if (onSuccess) onSuccess(formData);
       } catch (err) {
         console.error(err);
         toast({
@@ -142,11 +168,18 @@ import {
     };
   
     const removeExistingImage = (url) => {
+      console.log('Eliminando imagen:', url);
       setExistingImages((imgs) => imgs.filter((img) => img !== url));
+      setDeletedImages((prev) => [...prev, url]);
+      console.log('Imágenes eliminadas actualizadas:', [...deletedImages, url]);
     };
 
     const removeNewImage = (index) => {
+      // Revocar la URL de la imagen que se está eliminando
+      URL.revokeObjectURL(previewUrls[index]);
+      
       setNewImages(prev => prev.filter((_, i) => i !== index));
+      setPreviewUrls(prev => prev.filter((_, i) => i !== index));
     };
   
     return (
@@ -272,7 +305,9 @@ import {
             <FormControl isRequired isInvalid={!selectedAdmin}>
               <FormLabel>Administrador</FormLabel>
               <AdminSearch
-                onSelect={setSelectedAdmin}
+                onSelect={(admin) => {
+                  setSelectedAdmin(admin);
+                }}
                 selectedAdmin={selectedAdmin}
               />
               <FormErrorMessage>
@@ -315,7 +350,7 @@ import {
           </GridItem>
 
           <GridItem colSpan={2}>
-            <FormControl isRequired isInvalid={existingImages.length + newImages.length === 0}>
+            <FormControl >
               <FormLabel>Imágenes</FormLabel>
               <VStack spacing={4} align="stretch">
                 <Box>
@@ -407,21 +442,7 @@ import {
     );
   };
 
-HotelForm.propTypes = {
-  hotelData: PropTypes.shape({
-    name: PropTypes.string,
-    direction: PropTypes.string,
-    category: PropTypes.string,
-    rangeOfPrices: PropTypes.shape({
-      min: PropTypes.number,
-      max: PropTypes.number
-    }),
-    facilities: PropTypes.arrayOf(PropTypes.string),
-    services: PropTypes.arrayOf(PropTypes.string),
-    images: PropTypes.arrayOf(PropTypes.string)
-  }),
-  onSuccess: PropTypes.func
-};
+
   
 export default HotelForm;
   

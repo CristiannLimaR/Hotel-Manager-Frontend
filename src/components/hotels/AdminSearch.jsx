@@ -22,39 +22,23 @@ import {
 import { FiSearch, FiUser } from "react-icons/fi";
 import { useState, useEffect } from "react";
 import PropTypes from 'prop-types';
+import useUsers from "../../shared/hooks/useUsers";
 
 const AdminSearch = ({ onSelect, selectedAdmin = null }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [searchTerm, setSearchTerm] = useState("");
   const [admins, setAdmins] = useState([]);
   const [filteredAdmins, setFilteredAdmins] = useState([]);
+  const { getManagers, isLoading } = useUsers();
+
+  const fetchAdmins = async () => {
+    const response = await getManagers();
+    setAdmins(response);
+  }
 
   // Datos de ejemplo - Esto debería venir de tu API
   useEffect(() => {
-    const mockAdmins = [
-      {
-        id: 1,
-        name: "Juan Pérez",
-        email: "juan@example.com",
-        status: "activo",
-        hotels: ["Hotel Marina", "Hotel Central"],
-      },
-      {
-        id: 2,
-        name: "María García",
-        email: "maria@example.com",
-        status: "activo",
-        hotels: ["Hotel Plaza"],
-      },
-      {
-        id: 3,
-        name: "Carlos López",
-        email: "carlos@example.com",
-        status: "inactivo",
-        hotels: [],
-      },
-    ];
-    setAdmins(mockAdmins);
+    fetchAdmins();
   }, []);
 
   useEffect(() => {
@@ -63,7 +47,7 @@ const AdminSearch = ({ onSelect, selectedAdmin = null }) => {
     } else {
       const filtered = admins.filter(
         (admin) =>
-          admin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          admin.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
           admin.email.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredAdmins(filtered);
@@ -97,8 +81,8 @@ const AdminSearch = ({ onSelect, selectedAdmin = null }) => {
       >
         {selectedAdmin ? (
           <HStack>
-            <Avatar size="sm" name={selectedAdmin.name} />
-            <Text>{selectedAdmin.name}</Text>
+            <Avatar size="sm" name={selectedAdmin.nombre} />
+            <Text>{selectedAdmin.nombre}</Text>
           </HStack>
         ) : (
           "Seleccionar Administrador"
@@ -126,7 +110,7 @@ const AdminSearch = ({ onSelect, selectedAdmin = null }) => {
               <List spacing={3}>
                 {filteredAdmins.map((admin) => (
                   <ListItem
-                    key={admin.id}
+                    key={admin._id}
                     p={3}
                     borderWidth={1}
                     borderRadius="md"
@@ -136,9 +120,9 @@ const AdminSearch = ({ onSelect, selectedAdmin = null }) => {
                   >
                     <HStack justify="space-between">
                       <HStack>
-                        <Avatar size="sm" name={admin.name} />
+                        <Avatar size="sm" name={admin.nombre} />
                         <Box>
-                          <Text fontWeight="medium">{admin.name}</Text>
+                          <Text fontWeight="medium">{admin.nombre}</Text>
                           <Text fontSize="sm" color="gray.500">
                             {admin.email}
                           </Text>
@@ -148,9 +132,6 @@ const AdminSearch = ({ onSelect, selectedAdmin = null }) => {
                         <Badge colorScheme={getStatusColor(admin.status)}>
                           {admin.status}
                         </Badge>
-                        <Text fontSize="xs" color="gray.500">
-                          {admin.hotels.length} hoteles
-                        </Text>
                       </VStack>
                     </HStack>
                   </ListItem>
@@ -167,11 +148,10 @@ const AdminSearch = ({ onSelect, selectedAdmin = null }) => {
 AdminSearch.propTypes = {
   onSelect: PropTypes.func.isRequired,
   selectedAdmin: PropTypes.shape({
-    id: PropTypes.number,
-    name: PropTypes.string,
+    id: PropTypes.string,
+    nombre: PropTypes.string,
     email: PropTypes.string,
     status: PropTypes.string,
-    hotels: PropTypes.arrayOf(PropTypes.string),
   }),
 };
 

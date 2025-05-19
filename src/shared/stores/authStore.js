@@ -3,36 +3,41 @@ import { persist } from 'zustand/middleware'
 
 const useAuthStore = create(
   persist(
-    (set) => ({
+    (set, get) => ({
       // Estado
       user: null,
       token: null,
       isAuthenticated: false,
 
       // Acciones
-      login: (userData, token) => set({
-        user: userData,
-        token,
-        isAuthenticated: true
-      }),
+      login: (userData, token) => {
+        set({
+          user: userData,
+          token,
+          isAuthenticated: true
+        });
+      },
 
-      logout: () => set({
-        user: null,
-        token: null,
-        isAuthenticated: false
-      }),
+      logout: () => {
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false
+        });
+      },
 
       updateUser: (userData) => set((state) => ({
         user: { ...state.user, ...userData }
       })),
 
       // Selectores
-      getUser: () => useAuthStore.getState().user,
-      getToken: () => useAuthStore.getState().token,
-      getIsAuthenticated: () => useAuthStore.getState().isAuthenticated
+      getUser: () => get().user,
+      getToken: () => get().token,
+      getIsAuthenticated: () => get().isAuthenticated,
+      getRole: () => get().user?.role
     }),
     {
-      name: 'auth-storage', // nombre para el almacenamiento persistente
+      name: 'auth-storage',
       partialize: (state) => ({ 
         user: state.user,
         token: state.token,
