@@ -4,11 +4,7 @@ import {
   Heading,
   Grid,
   Select,
-  Button,
   Flex,
-  Text,
-  Card,
-  CardBody,
   Divider,
   useColorModeValue,
 } from "@chakra-ui/react";
@@ -49,7 +45,7 @@ const ReportsContent = () => {
         </Select>
       </Flex>
 
-      {user.role === "ADMIN_ROLE" && (
+      {user.role === "ADMIN_ROLE" && stats?.hotelOccupancy(
         <Box my={6}>
           <BusyHotels data={stats.hotelOccupancy} />
         </Box>
@@ -66,7 +62,7 @@ const ReportsContent = () => {
       )}
 
       <Divider my={8} borderColor="gray.300" />
-      <StatsCards stats={stats} role={user.role} />
+      {stats && <StatsCards stats={stats} role={user.role} />}
     </Box>
   );
 };

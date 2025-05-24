@@ -15,7 +15,7 @@ function BusyHotels({ data }) {
   const textColor = useColorModeValue("gray.800", "white");
 
   if (!data) {
-    return <Texxt>No hay datos disponibles</Texxt>;
+    return <Text>No hay datos disponibles</Text>;
   }
 
   // Filtrar los hoteles por ocupación

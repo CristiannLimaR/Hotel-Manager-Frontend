@@ -3,11 +3,12 @@ import {
   Card,
   CardBody,
   Text,
+  Box,
   useColorModeValue,
 } from "@chakra-ui/react";
 
 const StatsCards = ({ stats, role }) => {
-  const cardBg = useColorModeValue("white", "gray.700");
+  const bg = useColorModeValue("gray.50", "gray.800");
   const textColor = useColorModeValue("gray.600", "gray.300");
   const valueColor = useColorModeValue("teal.600", "teal.300");
 
@@ -58,20 +59,6 @@ const StatsCards = ({ stats, role }) => {
             {role === "ADMIN_ROLE" ? "Gestionados" : "A tu cargo"}
           </Text>
         </CardBody>
-      </Card>
-
-      <Card height="128px">
-        <Text fontSize="sm" color={textColor} marginLeft="0.9rem" marginTop="1.5rem">
-          {role === "ADMIN_ROLE" ? "Habitaciónes Ocupadas" : "Tus Habitaciónes"}
-        </Text>
-        <Text fontSize="2x1" fontWeight="bold" color={valueColor} marginLeft="0.9rem">
-          {stats.roomsOccupied ?? "0"}
-        </Text>
-        {role === "MANAGER_ROLE" && (
-          <Text  fontSize="xs" color={textColor}>
-            {stats.roomsAvailable ?? "0"} disponibles
-          </Text>
-        )}
       </Card>
     </Grid>
   );

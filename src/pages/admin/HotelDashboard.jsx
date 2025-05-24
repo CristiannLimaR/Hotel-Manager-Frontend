@@ -7,6 +7,7 @@ import ReservationsContent from "../../components/admin/reservations/Reservation
 import RoomsContent from "../../components/admin/rooms/RoomsContent";
 import EventsContent from "../../components/admin/events/EventsContent";
 import InvoicesContent from "../../components/admin/invoices/InvoicesContent";
+import ReportsContent from "../../components/admin/platform/ReportsContent";
 
 const HotelDashboard = () => {
   const [activeNavItem, setActiveNavItem] = useState("Dashboard");
@@ -23,6 +24,9 @@ const HotelDashboard = () => {
         return <EventsContent />;
       case "Invoices":
         return <InvoicesContent />;
+      case "Reportes":
+        console.log("Desde el HOTEL DASHBOARD")
+        return <ReportsContent/>
       default:
         return <DashboardContent />;
     }

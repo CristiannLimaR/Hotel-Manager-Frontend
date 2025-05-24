@@ -11,13 +11,19 @@ export const login = async (data) => {
     const response = await apiClient.post("/auth/login", data);
     const { token, user } = response.data;
 
+    let hotelId = null
+    if (user.role === 'MANAGER_ROLE') {
+      hotelId = await getHotelByManager()
+    }
+
+
     // Guardar en el store de autenticación
-    useAuthStore.getState().login(user, token);
+    useAuthStore.getState().login({...user, hotelId}, token);
 
     return {
       data: {
         token,
-        user,
+        user: {...user, hotelId},
       },
     };
   } catch (e) {
@@ -168,9 +174,18 @@ export const getBusyAvailableRooms = async (hotelId) => {
 
 export const getTotalReservations = async () => {
   try {
-    const response = await apiClient.get(
-      `/reservations/busyRooms`
-    )
+    const response = await apiClient.get('/reservations/busyRooms')
+    return response.data
+  } catch (e) {
+    return {
+      error: true,
+      e
+    }
+  }
+}
+export const getHotelByManager = async () => {
+  try {
+    const response = await axios.get('/hotels/manager')
   } catch (e) {
     return {
       error: true,
