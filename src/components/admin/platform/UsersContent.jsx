@@ -27,6 +27,15 @@ import { Card } from "@chakra-ui/react";
 
 const UsersContent = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
+
+  // Para el modal de confirmación de eliminación
+  const {
+    isOpen: isDeleteOpen,
+    onOpen: onDeleteOpen,
+    onClose: onDeleteClose,
+  } = useDisclosure();
+  const [userToDelete, setUserToDelete] = useState(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
 
@@ -85,6 +94,19 @@ const UsersContent = () => {
       ]);
     }
     onClose();
+  };
+
+  // Abrir modal de confirmación de eliminación
+  const handleDeleteClick = (user) => {
+    setUserToDelete(user);
+    onDeleteOpen();
+  };
+
+  // Eliminar usuario
+  const handleDelete = () => {
+    setUsers(users.filter((user) => user.id !== userToDelete.id));
+    setUserToDelete(null);
+    onDeleteClose();
   };
 
   // Filtrado (Funcional)
@@ -151,7 +173,11 @@ const UsersContent = () => {
                   >
                     Editar
                   </Button>
-                  <Button size="sm" colorScheme="red">
+                  <Button
+                    size="sm"
+                    colorScheme="red"
+                    onClick={() => handleDeleteClick(user)}
+                  >
                     Eliminar
                   </Button>
                 </Td>
@@ -202,6 +228,27 @@ const UsersContent = () => {
               </Button>
             </Stack>
           </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal de confirmación de eliminación */}
+      <Modal isOpen={isDeleteOpen} onClose={onDeleteClose} isCentered>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Confirmar eliminación</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            ¿Estás seguro de que deseas eliminar al usuario{" "}
+            <b>{userToDelete?.name}</b>?
+          </ModalBody>
+          <Flex justify="flex-end" p={4} pt={0}>
+            <Button onClick={onDeleteClose} mr={3}>
+              Cancelar
+            </Button>
+            <Button colorScheme="red" onClick={handleDelete}>
+              Eliminar
+            </Button>
+          </Flex>
         </ModalContent>
       </Modal>
     </Box>
