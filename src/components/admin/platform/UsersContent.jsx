@@ -31,17 +31,74 @@ const UsersContent = () => {
   const [roleFilter, setRoleFilter] = useState("all");
 
   // Datos de ejemplo
-  const users = [
+  const [users, setUsers] = useState([
     { id: 1, name: "Juan Pérez", email: "juan@example.com", role: "admin", status: "activo" },
     { id: 2, name: "María García", email: "maria@example.com", role: "hotel_admin", status: "activo" },
     // ... más usuarios
-  ];
+  ]);
+
+  // crear/editar usuario
+  const [editingUser, setEditingUser] = useState(null);
+  const [formName, setFormName] = useState("");
+  const [formEmail, setFormEmail] = useState("");
+  const [formRole, setFormRole] = useState("user");
+
+  //modal para nuevo usuario
+  const handleNewUser = () => {
+    setEditingUser(null);
+    setFormName("");
+    setFormEmail("");
+    setFormRole("user");
+    onOpen();
+  };
+
+  // modal para editar usuario
+  const handleEditClick = (user) => {
+    setEditingUser(user);
+    setFormName(user.name);
+    setFormEmail(user.email);
+    setFormRole(user.role);
+    onOpen();
+  };
+
+  // Guardar usuario (crear o editar)
+  const handleSave = () => {
+    if (editingUser) {
+      // Editar usuario existente
+      setUsers(users.map(u =>
+        u.id === editingUser.id
+          ? { ...u, name: formName, email: formEmail, role: formRole }
+          : u
+      ));
+    } else {
+      // Crear nuevo usuario
+      const newId = users.length ? Math.max(...users.map(u => u.id)) + 1 : 1;
+      setUsers([
+        ...users,
+        {
+          id: newId,
+          name: formName,
+          email: formEmail,
+          role: formRole,
+          status: "activo",
+        },
+      ]);
+    }
+    onClose();
+  };
+
+  // Filtrado (Funcional)
+  const filteredUsers = users.filter(user =>
+    (roleFilter === "all" || user.role === roleFilter) &&
+    (user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   return (
     <Box>
       <Flex justify="space-between" align="center" mb={6}>
         <Heading>Gestión de Usuarios</Heading>
-        <Button colorScheme="blue" onClick={onOpen}>
+        <Button colorScheme="blue" onClick={handleNewUser}>
           Nuevo Usuario
         </Button>
       </Flex>
@@ -78,7 +135,7 @@ const UsersContent = () => {
             </Tr>
           </Thead>
           <Tbody>
-            {users.map((user) => (
+            {filteredUsers.map((user) => (
               <Tr key={user.id}>
                 <Td>{user.id}</Td>
                 <Td>{user.name}</Td>
@@ -86,7 +143,12 @@ const UsersContent = () => {
                 <Td>{user.role}</Td>
                 <Td>{user.status}</Td>
                 <Td>
-                  <Button size="sm" colorScheme="blue" mr={2}>
+                  <Button
+                    size="sm"
+                    colorScheme="blue"
+                    mr={2}
+                    onClick={() => handleEditClick(user)}
+                  >
                     Editar
                   </Button>
                   <Button size="sm" colorScheme="red">
@@ -99,31 +161,43 @@ const UsersContent = () => {
         </Table>
       </Card>
 
-      {/* Modal para nuevo usuario */}
+      {/* Modal para crear/editar usuario */}
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Nuevo Usuario</ModalHeader>
+          <ModalHeader>{editingUser ? "Editar Usuario" : "Nuevo Usuario"}</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
             <Stack spacing={4}>
               <FormControl>
                 <FormLabel>Nombre</FormLabel>
-                <Input placeholder="Nombre completo" />
+                <Input
+                  placeholder="Nombre completo"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                />
               </FormControl>
               <FormControl>
                 <FormLabel>Email</FormLabel>
-                <Input type="email" placeholder="correo@ejemplo.com" />
+                <Input
+                  type="email"
+                  placeholder="correo@ejemplo.com"
+                  value={formEmail}
+                  onChange={(e) => setFormEmail(e.target.value)}
+                />
               </FormControl>
               <FormControl>
                 <FormLabel>Rol</FormLabel>
-                <Select>
+                <Select
+                  value={formRole}
+                  onChange={(e) => setFormRole(e.target.value)}
+                >
                   <option value="admin">Administrador</option>
                   <option value="hotel_admin">Admin de Hotel</option>
                   <option value="user">Usuario</option>
                 </Select>
               </FormControl>
-              <Button colorScheme="blue" mr={3}>
+              <Button colorScheme="blue" mr={3} onClick={handleSave}>
                 Guardar
               </Button>
             </Stack>
@@ -134,4 +208,4 @@ const UsersContent = () => {
   );
 };
 
-export default UsersContent; 
+export default UsersContent;
