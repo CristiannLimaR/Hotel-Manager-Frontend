@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Box, 
   Input, 
@@ -13,8 +13,9 @@ import {
 } from '@chakra-ui/react'
 import { FiMapPin, FiCalendar, FiUsers, FiSearch } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
+import PropTypes from 'prop-types'
 
-function SearchBar() {
+function SearchBar({ initialValues = null }) {
   const [searchParams, setSearchParams] = useState({
     destination: '',
     checkIn: '',
@@ -23,6 +24,12 @@ function SearchBar() {
   })
   
   const navigate = useNavigate()
+  
+  useEffect(() => {
+    if (initialValues) {
+      setSearchParams(initialValues)
+    }
+  }, [initialValues])
   
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -45,14 +52,14 @@ function SearchBar() {
       >
         <GridItem colSpan={1}>
           <FormControl>
-            <FormLabel fontWeight="medium" fontSize="sm">Destination</FormLabel>
+            <FormLabel fontWeight="medium" fontSize="sm">Destino</FormLabel>
             <InputGroup>
               <InputLeftElement pointerEvents="none">
                 <FiMapPin color="gray.300" />
               </InputLeftElement>
               <Input 
                 name="destination"
-                placeholder="Where to?" 
+                placeholder="¿A dónde vas?" 
                 value={searchParams.destination}
                 onChange={handleInputChange}
               />
@@ -62,7 +69,7 @@ function SearchBar() {
         
         <GridItem colSpan={1}>
           <FormControl>
-            <FormLabel fontWeight="medium" fontSize="sm">Check in</FormLabel>
+            <FormLabel fontWeight="medium" fontSize="sm">Llegada</FormLabel>
             <InputGroup>
               <InputLeftElement pointerEvents="none">
                 <FiCalendar color="gray.300" />
@@ -79,7 +86,7 @@ function SearchBar() {
         
         <GridItem colSpan={1}>
           <FormControl>
-            <FormLabel fontWeight="medium" fontSize="sm">Check out</FormLabel>
+            <FormLabel fontWeight="medium" fontSize="sm">Salida</FormLabel>
             <InputGroup>
               <InputLeftElement pointerEvents="none">
                 <FiCalendar color="gray.300" />
@@ -96,7 +103,7 @@ function SearchBar() {
         
         <GridItem colSpan={1}>
           <FormControl>
-            <FormLabel fontWeight="medium" fontSize="sm">Guests</FormLabel>
+            <FormLabel fontWeight="medium" fontSize="sm">Huéspedes</FormLabel>
             <Box display="flex">
               <InputGroup>
                 <InputLeftElement pointerEvents="none">
@@ -107,11 +114,11 @@ function SearchBar() {
                   value={searchParams.guests}
                   onChange={handleInputChange}
                 >
-                  <option value="1">1 Guest</option>
-                  <option value="2">2 Guests</option>
-                  <option value="3">3 Guests</option>
-                  <option value="4">4 Guests</option>
-                  <option value="5">5+ Guests</option>
+                  <option value="1">1 Huésped</option>
+                  <option value="2">2 Huéspedes</option>
+                  <option value="3">3 Huéspedes</option>
+                  <option value="4">4 Huéspedes</option>
+                  <option value="5">5+ Huéspedes</option>
                 </Select>
               </InputGroup>
               <Button 
@@ -130,6 +137,15 @@ function SearchBar() {
       </Grid>
     </Box>
   )
+}
+
+SearchBar.propTypes = {
+  initialValues: PropTypes.shape({
+    destination: PropTypes.string,
+    checkIn: PropTypes.string,
+    checkOut: PropTypes.string,
+    guests: PropTypes.string
+  })
 }
 
 export default SearchBar

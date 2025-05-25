@@ -25,7 +25,7 @@ import {
   useColorModeValue
 } from '@chakra-ui/react'
 import { FiUsers, FiClock, FiAlertCircle } from 'react-icons/fi'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import useHotel from '../shared/hooks/useHotel'
 import useAuthStore from '../shared/stores/authStore'
 import { useReservation } from '../shared/hooks/useReservation'
@@ -42,6 +42,7 @@ dayjs.extend(isSameOrBefore)
 function Booking() {
   const { hotelId, roomId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const toast = useToast()
   const { getHotelById } = useHotel()
   const { isAuthenticated } = useAuthStore()
@@ -60,6 +61,18 @@ function Booking() {
   const bgColor = useColorModeValue('white', 'gray.800')
   const borderColor = useColorModeValue('gray.200', 'gray.700')
   const textColor = useColorModeValue('gray.800', 'white')
+
+  useEffect(() => {
+    if (location.state) {
+      const { checkIn, checkOut, guests } = location.state
+      setBookingData(prev => ({
+        ...prev,
+        checkInDate: checkIn ? new Date(checkIn) : null,
+        checkOutDate: checkOut ? new Date(checkOut) : null,
+        guests: guests || 1
+      }))
+    }
+  }, [location.state])
 
   const getDisabledDates = () => {
     if (!selectedRoom?.nonAvailability) return [];

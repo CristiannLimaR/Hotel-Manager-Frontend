@@ -32,6 +32,13 @@ function Hotels() {
     category: '',
     facilities: []
   })
+  const [searchParams, setSearchParams] = useState({
+    destination: '',
+    checkIn: '',
+    checkOut: '',
+    guests: '2'
+  })
+  const [sortBy, setSortBy] = useState('')
 
   useEffect(() => {
     const fetchHotels = async () => {
@@ -45,16 +52,48 @@ function Hotels() {
   // Initialize from search params if available
   useEffect(() => {
     if (location.state) {
-      const { destination } = location.state
+      const { destination, checkIn, checkOut, guests } = location.state
+      setSearchParams({ destination, checkIn, checkOut, guests })
+      
+      // Aplicar filtros iniciales
+      let filtered = [...hotels]
+      
+      // Filter by destination
       if (destination) {
-        // Filter hotels based on destination
-        const filtered = hotels.filter(hotel => 
-          hotel.direction.toLowerCase().includes(destination.toLowerCase())
+        filtered = filtered.filter(hotel => 
+          hotel.location?.toLowerCase().includes(destination.toLowerCase()) ||
+          hotel.direction?.toLowerCase().includes(destination.toLowerCase())
         )
-        setFilteredHotels(filtered.length > 0 ? filtered : hotels)
       }
+
+      // Filter by room availability
+      if (checkIn && checkOut) {
+        const checkInDate = new Date(checkIn)
+        const checkOutDate = new Date(checkOut)
+        
+        filtered = filtered.filter(hotel => {
+          return hotel.rooms.some(room => {
+            if (!room.nonAvailability || room.nonAvailability.length === 0) {
+              return true
+            }
+
+            return !room.nonAvailability.some(period => {
+              const periodStart = new Date(period.start)
+              const periodEnd = new Date(period.end)
+              
+              return (
+                (checkInDate >= periodStart && checkInDate < periodEnd) ||
+                (checkOutDate > periodStart && checkOutDate <= periodEnd) ||
+                (checkInDate <= periodStart && checkOutDate >= periodEnd)
+              )
+            })
+          })
+        })
+      }
+      
+      setFilteredHotels(filtered)
     }
-  }, [location])
+  }, [location, hotels])
   
   const handlePriceChange = (values) => {
     setFilters({
@@ -107,6 +146,43 @@ function Hotels() {
       )
     }
     
+    // Filter by destination from search params
+    if (searchParams.destination) {
+      results = results.filter(hotel => 
+        hotel.location?.toLowerCase().includes(searchParams.destination.toLowerCase()) ||
+        hotel.direction?.toLowerCase().includes(searchParams.destination.toLowerCase())
+      )
+    }
+
+    // Filter by room availability for selected dates
+    if (searchParams.checkIn && searchParams.checkOut) {
+      const checkIn = new Date(searchParams.checkIn)
+      const checkOut = new Date(searchParams.checkOut)
+      
+      results = results.filter(hotel => {
+        // Verificar si el hotel tiene habitaciones disponibles
+        return hotel.rooms.some(room => {
+          // Si la habitación no tiene períodos de no disponibilidad, está disponible
+          if (!room.nonAvailability || room.nonAvailability.length === 0) {
+            return true
+          }
+
+          // Verificar si las fechas seleccionadas se superponen con algún período de no disponibilidad
+          return !room.nonAvailability.some(period => {
+            const periodStart = new Date(period.start)
+            const periodEnd = new Date(period.end)
+            
+            // Verificar si hay superposición de fechas
+            return (
+              (checkIn >= periodStart && checkIn < periodEnd) || // La fecha de entrada está dentro del período
+              (checkOut > periodStart && checkOut <= periodEnd) || // La fecha de salida está dentro del período
+              (checkIn <= periodStart && checkOut >= periodEnd) // El período está completamente dentro de las fechas seleccionadas
+            )
+          })
+        })
+      })
+    }
+    
     setFilteredHotels(results)
   }
   
@@ -116,10 +192,42 @@ function Hotels() {
       category: '',
       facilities: []
     })
+    setSearchParams({
+      destination: '',
+      checkIn: '',
+      checkOut: '',
+      guests: '2'
+    })
     setFilteredHotels(hotels)
   }
   
   const filterBg = useColorModeValue('white', 'gray.800')
+  
+  const handleSortChange = (e) => {
+    const value = e.target.value
+    setSortBy(value)
+    
+    let sortedHotels = [...filteredHotels]
+    
+    switch (value) {
+      case 'priceAsc':
+        sortedHotels.sort((a, b) => a.rangeOfPrices.min - b.rangeOfPrices.min)
+        break
+      case 'priceDesc':
+        sortedHotels.sort((a, b) => b.rangeOfPrices.max - a.rangeOfPrices.max)
+        break
+      case 'ratingDesc':
+        sortedHotels.sort((a, b) => b.rating - a.rating)
+        break
+      case 'popular':
+        sortedHotels.sort((a, b) => b.reviews?.length - a.reviews?.length)
+        break
+      default:
+        break
+    }
+    
+    setFilteredHotels(sortedHotels)
+  }
   
   return (
     <Box pt={20} pb={16}>
@@ -130,7 +238,7 @@ function Hotels() {
             fontSize={{ base: '2xl', md: '3xl' }} 
             mb={6}
           >
-            Find Your Perfect Hotel
+            Encuentra Tu Hotel Perfecto
           </Heading>
           
           <Box 
@@ -139,7 +247,7 @@ function Hotels() {
             borderRadius="lg" 
             boxShadow="sm"
           >
-            <SearchBar />
+            <SearchBar initialValues={searchParams} />
           </Box>
         </Container>
       </Box>
@@ -162,7 +270,7 @@ function Hotels() {
               mb={4}
             >
               <Heading as="h3" fontSize="lg" mb={5}>
-                Filters
+                Filtros
               </Heading>
               
               <Stack spacing={6}>
@@ -273,6 +381,8 @@ function Hotels() {
                 maxW="200px" 
                 placeholder="Ordenar por" 
                 size="sm"
+                value={sortBy}
+                onChange={handleSortChange}
               >
                 <option value="priceAsc">Precio: Menor a Mayor</option>
                 <option value="priceDesc">Precio: Mayor a Menor</option>
@@ -289,10 +399,16 @@ function Hotels() {
                 borderRadius="md"
               >
                 <Text fontSize="lg" fontWeight="medium">
-                  No se encontraron hoteles que coincidan con tus criterios.
+                  {searchParams.destination 
+                    ? `No hay hoteles disponibles para '${searchParams.destination}'`
+                    : 'No se encontraron hoteles que coincidan con tus criterios'
+                  }
                 </Text>
                 <Text color="gray.600" mt={2}>
-                  Intenta ajustar tus filtros para obtener más resultados.
+                  {searchParams.destination
+                    ? 'Intenta buscar en otra ubicación o ajusta tus filtros.'
+                    : 'Intenta ajustar tus filtros para obtener más resultados.'
+                  }
                 </Text>
               </Box>
             ) : (

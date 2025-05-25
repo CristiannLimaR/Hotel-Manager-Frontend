@@ -1,218 +1,197 @@
-import { 
-  Box, 
-  Container, 
-  Heading, 
-  Text, 
-  SimpleGrid, 
-  Select, 
-  Input, 
-  Button, 
+import {
+  Box,
+  Container,
+  Heading,
+  Text,
+  SimpleGrid,
+  Button,
   Flex,
-  Icon,
-  VStack,
-  useColorModeValue
-} from '@chakra-ui/react'
-import { useState } from 'react'
-import { FiFilter } from 'react-icons/fi'
-import EventCard from '../components/events/EventCard'
-import { events } from '../data/events'
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  useToast,
+  Input,
+  Select,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
+  InputGroup,
+  InputLeftElement,
+} from "@chakra-ui/react";
+import { useState, useEffect } from "react";
+import { FiPlus, FiSearch } from "react-icons/fi";
+import EventCard from "../components/events/EventCard";
+import EventForm from "../components/events/EventForm";
+import { useEvent } from "../shared/hooks/useEvent";
 
 function Events() {
-  const [filteredEvents, setFilteredEvents] = useState(events)
-  const [filters, setFilters] = useState({
-    type: '',
-    capacity: '',
-    priceRange: ''
-  })
-  
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target
-    setFilters(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
-  
-  const applyFilters = () => {
-    let results = [...events]
-    
-    if (filters.type) {
-      results = results.filter(event => event.type === filters.type)
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [userEvents, setUserEvents] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedType, setSelectedType] = useState("");
+  const toast = useToast();
+  const { createEvent, getMyEvents } = useEvent();
+
+  const fetchEvents = async () => {
+    try {
+      const events = await getMyEvents();
+      setUserEvents(events);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los eventos",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
     }
-    
-    if (filters.capacity) {
-      const minCapacity = parseInt(filters.capacity)
-      results = results.filter(event => event.capacity >= minCapacity)
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const handleCreateEvent = async (eventData, hotelId) => {
+    const response = await createEvent(eventData, hotelId);
+    if (response) {
+      fetchEvents();
+      onClose();
     }
-    
-    if (filters.priceRange) {
-      const maxPrice = parseInt(filters.priceRange)
-      results = results.filter(event => event.price <= maxPrice)
-    }
-    
-    setFilteredEvents(results)
-  }
-  
-  const resetFilters = () => {
-    setFilters({
-      type: '',
-      capacity: '',
-      priceRange: ''
-    })
-    setFilteredEvents(events)
-  }
-  
-  const filterBg = useColorModeValue('white', 'gray.800')
-  
+  };
+
+  const filteredEvents = userEvents.filter((event) => {
+    const matchesSearch = event.nombre_evento.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = selectedType === "" || event.tipo_evento === selectedType;
+    return matchesSearch && matchesType;
+  });
+
+  const activeEvents = filteredEvents.filter((event) => event.estado !== false);
+  const cancelledEvents = filteredEvents.filter((event) => event.estado === false);
+
+  const eventTypes = [
+    { value: "", label: "Todos los tipos" },
+    { value: "Wedding", label: "Boda" },
+    { value: "Conference", label: "Conferencia" },
+    { value: "Birthday", label: "Cumpleaños" },
+    { value: "Gala", label: "Gala" },
+    { value: "Corporate", label: "Corporativo" },
+    { value: "Graduation", label: "Graduación" },
+    { value: "Anniversary", label: "Aniversario" },
+  ];
+
   return (
     <Box pt={24} pb={16}>
       <Container maxW="1200px">
         <Box mb={8}>
-          <Heading as="h1" fontSize={{ base: '2xl', md: '3xl' }} mb={3}>
-            Special Events & Venues
+          <Heading as="h1" fontSize={{ base: "2xl", md: "3xl" }} mb={3}>
+            Mis Eventos
           </Heading>
           <Text color="gray.600">
-            Discover the perfect venue for your next event, from intimate gatherings to grand celebrations
+            Gestiona tus eventos especiales y celebra tus momentos más importantes
           </Text>
         </Box>
-        
-        <Flex 
-          gap={8} 
-          flexDirection={{ base: 'column', lg: 'row' }}
-        >
-          {/* Filters */}
-          <Box w={{ base: '100%', lg: '300px' }}>
-            <Box 
-              p={6} 
-              borderRadius="lg" 
-              bg={filterBg}
-              boxShadow="sm"
-              position="sticky"
-              top="100px"
+
+        <Flex justify="space-between" align="center" mb={6}>
+          <Flex gap={4} flex={1} mr={4}>
+            <InputGroup maxW="300px">
+              <InputLeftElement pointerEvents="none">
+                <FiSearch color="gray.300" />
+              </InputLeftElement>
+              <Input
+                placeholder="Buscar por nombre..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </InputGroup>
+            <Select
+              maxW="200px"
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
             >
-              <Heading as="h3" fontSize="lg" mb={6}>
-                Filter Events
-              </Heading>
-              
-              <VStack spacing={4} align="stretch">
-                <Box>
-                  <Text mb={2} fontWeight="medium">Event Type</Text>
-                  <Select 
-                    name="type"
-                    value={filters.type}
-                    onChange={handleFilterChange}
-                    placeholder="All Types"
-                  >
-                    <option value="Wedding">Wedding</option>
-                    <option value="Conference">Conference</option>
-                    <option value="Birthday">Birthday</option>
-                    <option value="Gala">Gala</option>
-                    <option value="Corporate">Corporate</option>
-                  </Select>
-                </Box>
-                
-                <Box>
-                  <Text mb={2} fontWeight="medium">Minimum Capacity</Text>
-                  <Select 
-                    name="capacity"
-                    value={filters.capacity}
-                    onChange={handleFilterChange}
-                    placeholder="Any Capacity"
-                  >
-                    <option value="50">50+ Guests</option>
-                    <option value="100">100+ Guests</option>
-                    <option value="200">200+ Guests</option>
-                    <option value="300">300+ Guests</option>
-                  </Select>
-                </Box>
-                
-                <Box>
-                  <Text mb={2} fontWeight="medium">Maximum Budget</Text>
-                  <Select 
-                    name="priceRange"
-                    value={filters.priceRange}
-                    onChange={handleFilterChange}
-                    placeholder="Any Budget"
-                  >
-                    <option value="1500">Up to $1,500</option>
-                    <option value="3000">Up to $3,000</option>
-                    <option value="5000">Up to $5,000</option>
-                    <option value="10000">Up to $10,000</option>
-                  </Select>
-                </Box>
-                
-                <Button 
-                  colorScheme="teal" 
-                  leftIcon={<FiFilter />}
-                  onClick={applyFilters}
-                  mt={2}
-                >
-                  Apply Filters
-                </Button>
-                
-                <Button 
-                  variant="ghost" 
-                  onClick={resetFilters}
-                >
-                  Reset Filters
-                </Button>
-              </VStack>
-            </Box>
-          </Box>
-          
-          {/* Events Grid */}
-          <Box flex="1">
-            <Flex 
-              justify="space-between" 
-              align="center" 
-              mb={6}
-            >
-              <Text color="gray.600">
-                {filteredEvents.length} events available
-              </Text>
-              
-              <Select 
-                maxW="200px"
-                placeholder="Sort by"
-                size="sm"
-              >
-                <option value="priceAsc">Price: Low to High</option>
-                <option value="priceDesc">Price: High to Low</option>
-                <option value="capacityDesc">Capacity: High to Low</option>
-                <option value="capacityAsc">Capacity: Low to High</option>
-              </Select>
-            </Flex>
-            
-            {filteredEvents.length === 0 ? (
-              <Box 
-                textAlign="center" 
-                py={10} 
-                px={6} 
-                bg="gray.50" 
-                borderRadius="lg"
-              >
-                <Heading as="h3" fontSize="lg" mb={2}>
-                  No events found
-                </Heading>
-                <Text color="gray.600">
-                  Try adjusting your filters to see more options
-                </Text>
-              </Box>
-            ) : (
-              <SimpleGrid 
-                columns={{ base: 1, md: 2 }} 
-                spacing={6}
-              >
-                {filteredEvents.map(event => (
-                  <EventCard key={event.id} event={event} />
-                ))}
-              </SimpleGrid>
-            )}
-          </Box>
+              {eventTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </Select>
+          </Flex>
+          <Button leftIcon={<FiPlus />} colorScheme="teal" onClick={onOpen}>
+            Crear Nuevo Evento
+          </Button>
         </Flex>
+
+        <Tabs variant="enclosed" colorScheme="teal">
+          <TabList>
+            <Tab>Eventos Activos ({activeEvents.length})</Tab>
+            <Tab>Eventos Cancelados ({cancelledEvents.length})</Tab>
+          </TabList>
+
+          <TabPanels>
+            <TabPanel px={0}>
+              {activeEvents.length === 0 ? (
+                <Box textAlign="center" py={10} px={6} bg="gray.50" borderRadius="lg">
+                  <Heading as="h3" fontSize="lg" mb={2}>
+                    No tienes eventos activos
+                  </Heading>
+                  <Text color="gray.600">
+                    Crea tu primer evento haciendo clic en el botón &quot;Crear Nuevo Evento&quot;
+                  </Text>
+                </Box>
+              ) : (
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                  {activeEvents.map((event) => (
+                    <EventCard 
+                      key={event._id} 
+                      event={event} 
+                      onEventUpdated={fetchEvents}
+                    />
+                  ))}
+                </SimpleGrid>
+              )}
+            </TabPanel>
+
+            <TabPanel px={0}>
+              {cancelledEvents.length === 0 ? (
+                <Box textAlign="center" py={10} px={6} bg="gray.50" borderRadius="lg">
+                  <Heading as="h3" fontSize="lg" mb={2}>
+                    No tienes eventos cancelados
+                  </Heading>
+                </Box>
+              ) : (
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                  {cancelledEvents.map((event) => (
+                    <EventCard 
+                      key={event._id} 
+                      event={event} 
+                      onEventUpdated={fetchEvents}
+                    />
+                  ))}
+                </SimpleGrid>
+              )}
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
       </Container>
+
+      {/* Modal para crear evento */}
+      <Modal isOpen={isOpen} onClose={onClose} size="xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Crear Nuevo Evento</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <EventForm onSuccess={handleCreateEvent} />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Box>
-  )
+  );
 }
 
-export default Events
+export default Events;

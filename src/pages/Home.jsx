@@ -17,12 +17,19 @@ import HotelCard from '../components/hotels/HotelCard'
 import TestimonialCard from '../components/testimonials/TestimonialCard'
 import { testimonials } from '../data/testimonials'
 import { useState, useEffect } from 'react'
-import  useHotel  from '../shared/hooks/useHotel'
+import useHotel from '../shared/hooks/useHotel'
+
 function Home() {
   const heroImageHeight = useBreakpointValue({ base: '500px', md: '600px', lg: '650px' })
   const heroTextWidth = useBreakpointValue({ base: '100%', md: '80%', lg: '60%' })
   const { getHotels } = useHotel()
   const [hotels, setHotels] = useState([])
+  const [searchParams, setSearchParams] = useState({
+    destination: '',
+    checkIn: '',
+    checkOut: '',
+    guests: '2'
+  })
 
   useEffect(() => {
     const fetchHotels = async () => {
@@ -33,7 +40,6 @@ function Home() {
   }, [])
 
   const featuredHotels = hotels.slice(0, 4)
-  
   
   return (
     <Box>
@@ -107,7 +113,7 @@ function Home() {
             mt={4}
             maxW={{ base: '100%', lg: '90%' }}
           >
-            <SearchBar />
+            <SearchBar initialValues={searchParams} />
           </Box>
         </Container>
       </Box>
@@ -153,8 +159,6 @@ function Home() {
           </Flex>
         </Container>
       </Box>
-      
-      
       
       <Box py={16} bg="gray.50">
         <Container maxW="1200px">
