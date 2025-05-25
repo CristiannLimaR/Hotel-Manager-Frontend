@@ -22,7 +22,7 @@ import {
   Avatar
 } from '@chakra-ui/react'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
-import { FiMenu, FiUser, FiLogOut } from 'react-icons/fi'
+import { FiMenu, FiUser, FiLogOut, FiSettings } from 'react-icons/fi'
 import { BedDoubleIcon } from 'lucide-react'
 import useAuthStore from '../../shared/stores/authStore'
 import useLogin from '../../shared/hooks/useLogin'
@@ -103,7 +103,6 @@ function Header() {
     { name: 'Hoteles', path: '/hotels' },
     { name: 'Eventos', path: '/events' },
     { name: 'Mis Reservas', path: '/my-bookings' },
-    { name: 'Acerca de', path: '/about' },
   ]
 
   return (
@@ -178,6 +177,15 @@ function Header() {
                 >
                   Mi Perfil
                 </MenuItem>
+                {(user?.role === 'ADMIN_ROLE' || user?.role === 'MANAGER_ROLE') && (
+                  <MenuItem
+                    as={RouterLink}
+                    to={user?.role === 'ADMIN_ROLE' ? '/admin/platform' : '/admin/hotel'}
+                    icon={<FiSettings />}
+                  >
+                    Panel de Administración
+                  </MenuItem>
+                )}
                 <MenuItem
                   onClick={logout}
                   icon={<FiLogOut />}

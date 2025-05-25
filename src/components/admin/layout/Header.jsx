@@ -52,7 +52,9 @@ const Header = ({ activeNavItem }) => {
           </MenuButton>
           <MenuList>
             <MenuItem as={RouterLink} to="/profile">Perfil</MenuItem>
+            <MenuItem as={RouterLink} to="/">Ir al Inicio</MenuItem>
             <MenuItem onClick={logout}>Cerrar Sesión</MenuItem>
+            
           </MenuList>
         </Menu>
       </HStack>

@@ -2,18 +2,25 @@ import { Box, Flex, Icon, Text, Heading, VStack, Divider, useColorModeValue } fr
 import {
   FiHome,
   FiCalendar,
+  FiGrid,
   FiUsers,
   FiDollarSign,
+  FiList,
   FiBarChart2,
   FiSettings,
   FiLogOut,
 } from "react-icons/fi";
+import { Link as RouterLink } from "react-router-dom";
 
-const NavItem = ({ icon, children, id, activeNavItem, setActiveNavItem }) => {
+const NavItem = ({ icon, children, id, activeNavItem, setActiveNavItem, as, to }) => {
   const bg = useColorModeValue("white", "gray.800");
   
+  const Component = as || Flex;
+  
   return (
-    <Flex
+    <Component
+      as={as}
+      to={to}
       align="center"
       px="4"
       py="3"
@@ -28,11 +35,11 @@ const NavItem = ({ icon, children, id, activeNavItem, setActiveNavItem }) => {
         bg: "blue.50",
         color: "blue.500",
       }}
-      onClick={() => setActiveNavItem(id)}
+      onClick={() => !as && setActiveNavItem(id)}
     >
       <Icon as={icon} mr="4" fontSize="18" />
       <Text fontSize="sm">{children}</Text>
-    </Flex>
+    </Component>
   );
 };
 
@@ -59,7 +66,7 @@ const Sidebar = ({ activeNavItem, setActiveNavItem }) => {
         <NavItem icon={FiCalendar} id="Reservations" activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem}>
           Reservations
         </NavItem>
-        <NavItem icon={FiHome} id="Rooms" activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem}>
+        <NavItem icon={FiGrid} id="Rooms" activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem}>
           Rooms
         </NavItem>
         <NavItem icon={FiUsers} id="Events" activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem}>
@@ -68,15 +75,11 @@ const Sidebar = ({ activeNavItem, setActiveNavItem }) => {
         <NavItem icon={FiDollarSign} id="Invoices" activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem}>
           Invoices
         </NavItem>
+        <NavItem icon={FiList} id="Services" activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem}>
+          Services
+        </NavItem>
         <NavItem icon={FiBarChart2} id="Analytics" activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem}>
           Analytics
-        </NavItem>
-        <Divider my={2} />
-        <NavItem icon={FiSettings} id="Settings" activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem}>
-          Settings
-        </NavItem>
-        <NavItem icon={FiLogOut} id="Logout" activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem}>
-          Go Home
         </NavItem>
       </VStack>
     </Box>

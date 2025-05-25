@@ -292,3 +292,51 @@ export const cancelEvent = async (id) => {
     };
   }
 };
+
+export const getServices = async () => {
+  try {
+    const response = await apiClient.get("/services");
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};
+
+export const createService = async (data) => {
+  try {
+    const response = await apiClient.post("/services", data);
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};
+
+export const updateService = async (id, data) => {
+  try {
+    const response = await apiClient.put(`/services/${id}`, data);
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};
+
+export const deleteService = async (id) => {
+  try {
+    const response = await apiClient.delete(`/services/${id}`);
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};

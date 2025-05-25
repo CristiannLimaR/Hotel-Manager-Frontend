@@ -14,12 +14,12 @@ export const publicRoutes = [
   { path: '/', element: <Home /> },
   { path: 'hotels', element: <Hotels /> },
   { path: 'hotels/:id', element: <HotelDetail /> },
-  { path: 'events', element: <Events /> },
   { path: 'login', element: <Login /> },
   { path: 'register', element: <Register /> },
 ];
 
 export const protectedRoutes = [
+  { path: 'events', element: <Events /> },
   { path: 'booking/:hotelId/:roomId', element: <Booking /> },
   { path: 'my-bookings', element: <MyBookings /> },
   { path: 'profile', element: <Profile /> },
