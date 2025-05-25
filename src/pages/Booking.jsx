@@ -126,7 +126,7 @@ function Booking() {
   
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    console.log(bookingData)
     if (!isAuthenticated) {
       toast({
         title: 'Error',
@@ -155,7 +155,8 @@ function Booking() {
         room: roomId,
         checkInDate: bookingData.checkInDate.toISOString(),
         checkOutDate: bookingData.checkOutDate.toISOString(),
-        services: bookingData.services
+        services: bookingData.services,
+        guests: bookingData.guests
       });
       navigate('/my-bookings');
     } catch (error) {
