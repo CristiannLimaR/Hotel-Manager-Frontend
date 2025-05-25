@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect} from "react";
 import {
   Box,
   Heading,
@@ -22,12 +22,23 @@ import {
   FormControl,
   FormLabel,
   Stack,
+  Badge,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
 } from "@chakra-ui/react";
 import { Card } from "@chakra-ui/react";
+import useUsers from "../../../shared/hooks/useUsers";
+import { useRef } from "react";
 
 const UsersContent = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
-
+  const { getUsers, updateUser, deleteUser } = useUsers();
+  const cancelRef = useRef();
+  
   // Para el modal de confirmación de eliminación
   const {
     isOpen: isDeleteOpen,
@@ -39,59 +50,52 @@ const UsersContent = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
 
-  // Datos de ejemplo
-  const [users, setUsers] = useState([
-    { id: 1, name: "Juan Pérez", email: "juan@example.com", role: "admin", status: "activo" },
-    { id: 2, name: "María García", email: "maria@example.com", role: "hotel_admin", status: "activo" },
-    // ... más usuarios
-  ]);
+  
+  const [users, setUsers] = useState([]);
+
+  const fetchUsers = async () => {
+    const users = await getUsers();
+    console.log(users)
+    setUsers(users);
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   // crear/editar usuario
   const [editingUser, setEditingUser] = useState(null);
   const [formName, setFormName] = useState("");
   const [formEmail, setFormEmail] = useState("");
   const [formRole, setFormRole] = useState("user");
-
-  //modal para nuevo usuario
-  const handleNewUser = () => {
-    setEditingUser(null);
-    setFormName("");
-    setFormEmail("");
-    setFormRole("user");
-    onOpen();
-  };
+  
 
   // modal para editar usuario
   const handleEditClick = (user) => {
     setEditingUser(user);
-    setFormName(user.name);
+    setFormName(user.nombre);
     setFormEmail(user.email);
     setFormRole(user.role);
     onOpen();
   };
 
   // Guardar usuario (crear o editar)
-  const handleSave = () => {
+  const handleSave = async () => {
     if (editingUser) {
-      // Editar usuario existente
-      setUsers(users.map(u =>
-        u.id === editingUser.id
-          ? { ...u, name: formName, email: formEmail, role: formRole }
-          : u
-      ));
-    } else {
-      // Crear nuevo usuario
-      const newId = users.length ? Math.max(...users.map(u => u.id)) + 1 : 1;
-      setUsers([
-        ...users,
-        {
-          id: newId,
-          name: formName,
+      try {
+        const updatedUserData = {
+          nombre: formName,
           email: formEmail,
-          role: formRole,
-          status: "activo",
-        },
-      ]);
+          role: formRole
+        };
+        
+        await updateUser(editingUser._id, updatedUserData);
+        await fetchUsers(); // Recargar la lista de usuarios
+        onClose();
+      } catch (error) {
+        console.error('Error al actualizar usuario:', error);
+        // Aquí podrías agregar una notificación de error si lo deseas
+      }
     }
     onClose();
   };
@@ -103,26 +107,64 @@ const UsersContent = () => {
   };
 
   // Eliminar usuario
-  const handleDelete = () => {
-    setUsers(users.filter((user) => user.id !== userToDelete.id));
-    setUserToDelete(null);
-    onDeleteClose();
+  const handleDelete = async () => {
+    try {
+      await deleteUser(userToDelete._id);
+      await fetchUsers(); // Recargar la lista de usuarios
+      setUserToDelete(null);
+      onDeleteClose();
+    } catch (error) {
+      console.error('Error al eliminar usuario:', error);
+      // Aquí podrías agregar una notificación de error si lo deseas
+    }
   };
 
   // Filtrado (Funcional)
-  const filteredUsers = users.filter(user =>
-    (roleFilter === "all" || user.role === roleFilter) &&
-    (user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredUsers = users?.filter(user => {
+    const searchTermLower = searchTerm.toLowerCase();
+    const matchesSearch = 
+      user._id?.toString().includes(searchTermLower) ||
+      user.nombre?.toLowerCase().includes(searchTermLower) ||
+      user.email?.toLowerCase().includes(searchTermLower) ||
+      getRoleLabel(user.role)?.toLowerCase().includes(searchTermLower);
+    
+    const matchesRole = roleFilter === "all" || user.role === roleFilter;
+    
+    return matchesSearch && matchesRole;
+  });
+
+  console.log(users)
+
+  const getRoleColor = (role) => {
+    switch (role) {
+      case 'ADMIN_ROLE':
+        return 'teal';
+      case 'MANAGER_ROLE':
+        return 'orange';
+      case 'USER_ROLE':
+        return 'green';
+      default:
+        return 'gray';
+    }
+  };
+
+  const getRoleLabel = (role) => {
+    switch (role) {
+      case 'ADMIN_ROLE':
+        return 'Administrador';
+      case 'MANAGER_ROLE':
+        return 'Admin de Hotel';
+      case 'USER_ROLE':
+        return 'Usuario';
+      default:
+        return role;
+    }
+  };
 
   return (
     <Box>
       <Flex justify="space-between" align="center" mb={6}>
         <Heading>Gestión de Usuarios</Heading>
-        <Button colorScheme="blue" onClick={handleNewUser}>
-          Nuevo Usuario
-        </Button>
       </Flex>
 
       <Card>
@@ -139,9 +181,9 @@ const UsersContent = () => {
             maxW="200px"
           >
             <option value="all">Todos los roles</option>
-            <option value="admin">Administrador</option>
-            <option value="hotel_admin">Admin de Hotel</option>
-            <option value="user">Usuario</option>
+            <option value="ADMIN_ROLE">Administrador</option>
+            <option value="MANAGER_ROLE">Admin de Hotel</option>
+            <option value="USER_ROLE">Usuario</option>
           </Select>
         </Flex>
 
@@ -152,18 +194,20 @@ const UsersContent = () => {
               <Th>Nombre</Th>
               <Th>Email</Th>
               <Th>Rol</Th>
-              <Th>Estado</Th>
               <Th>Acciones</Th>
             </Tr>
           </Thead>
           <Tbody>
-            {filteredUsers.map((user) => (
+            {filteredUsers?.map((user) => (
               <Tr key={user.id}>
-                <Td>{user.id}</Td>
-                <Td>{user.name}</Td>
+                <Td>{user._id}</Td>
+                <Td>{user.nombre}</Td>
                 <Td>{user.email}</Td>
-                <Td>{user.role}</Td>
-                <Td>{user.status}</Td>
+                <Td>
+                  <Badge colorScheme={getRoleColor(user.role)} fontSize="sm" px={2} py={1} borderRadius="md">
+                    {getRoleLabel(user.role)}
+                  </Badge>
+                </Td>
                 <Td>
                   <Button
                     size="sm"
@@ -218,9 +262,9 @@ const UsersContent = () => {
                   value={formRole}
                   onChange={(e) => setFormRole(e.target.value)}
                 >
-                  <option value="admin">Administrador</option>
-                  <option value="hotel_admin">Admin de Hotel</option>
-                  <option value="user">Usuario</option>
+                  <option value="ADMIN_ROLE">Administrador</option>
+                  <option value="MANAGER_ROLE">Admin de Hotel</option>
+                  <option value="USER_ROLE">Usuario</option>
                 </Select>
               </FormControl>
               <Button colorScheme="blue" mr={3} onClick={handleSave}>
@@ -232,25 +276,34 @@ const UsersContent = () => {
       </Modal>
 
       {/* Modal de confirmación de eliminación */}
-      <Modal isOpen={isDeleteOpen} onClose={onDeleteClose} isCentered>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Confirmar eliminación</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            ¿Estás seguro de que deseas eliminar al usuario{" "}
-            <b>{userToDelete?.name}</b>?
-          </ModalBody>
-          <Flex justify="flex-end" p={4} pt={0}>
-            <Button onClick={onDeleteClose} mr={3}>
-              Cancelar
-            </Button>
-            <Button colorScheme="red" onClick={handleDelete}>
-              Eliminar
-            </Button>
-          </Flex>
-        </ModalContent>
-      </Modal>
+      <AlertDialog
+        isOpen={isDeleteOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onDeleteClose}
+        isCentered
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Eliminar Usuario
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              ¿Estás seguro que deseas eliminar al usuario{" "}
+              <b>{userToDelete?.nombre}</b>? Esta acción no se puede deshacer.
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={onDeleteClose}>
+                Cancelar
+              </Button>
+              <Button colorScheme="red" onClick={handleDelete} ml={3}>
+                Eliminar
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Box>
   );
 };

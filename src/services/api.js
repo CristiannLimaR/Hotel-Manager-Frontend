@@ -138,6 +138,41 @@ export const getManagers = async () => {
   }
 };
 
+export const getUsers = async() => {
+  try {
+    const response = await apiClient.get("/users")
+    return response.data
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    }
+  }
+}
+
+export const updateUser = async(id, data) => {
+  try {
+    const response = await apiClient.put(`/users/${id}`, data)
+    return response.data
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    }
+  }
+}
+
+export const deleteUser = async(id) => {
+  try {
+    const response = await apiClient.delete(`/users/${id}`)
+    return response.data
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    }
+  }
+}
 export const saveReservation = async (data) => {
   try {
     const response = await apiClient.post("/reservations", data);
