@@ -78,6 +78,18 @@ export const getHotelsByAdmin = async () => {
     }
 };
 
+export const getHotelById = async (id) => {
+    try {
+      const response = await apiClient.get(`/hotels/search/${id}`);
+      return response.data;
+    } catch (e) {
+      return {
+        error: true,
+        e,
+      };
+    }
+};
+
 export const saveHotel = async (data) => {
     try {
       const response = await apiClient.post("/hotels/save", data);
@@ -126,4 +138,67 @@ export const getManagers = async () => {
     }
 };
   
+
+export const saveReservation = async (data) => {
+    try {
+      const response = await apiClient.post("/reservations", data);
+      return response.data;
+    } catch (e) {
+      return {
+        error: true,
+        e,
+      };
+    }
+};
+
+export const getReservations = async () => {
+    try {
+      const response = await apiClient.get("/reservations");
+      return response.data;
+    } catch (e) {
+      return {  
+        error: true,
+        e,
+      };
+    }
+};
+
+export const getReservationsByUser = async () => {
+    try {
+      const response = await apiClient.get(`/reservations/my-reservations`);
+      return response.data;
+    } catch (e) {
+      return {
+        error: true,
+        e,
+      };
+    }
+};
+
+export const editReservation = async (id, data) => {
+    try {
+      const response = await apiClient.put(`/reservations/${id}`, data);
+      return response.data;
+    } catch (e) {
+      return {
+        error: true,
+        e,
+      };
+    }
+};
+
+export const deleteReservation = async (id) => {
+    try {
+      const response = await apiClient.delete(`/reservations/${id}`);
+      return response.data;
+    } catch (e) {
+      return {
+        error: true,
+        e,
+      };
+    }
+};
+
+
+
   

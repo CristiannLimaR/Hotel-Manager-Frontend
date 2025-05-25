@@ -20,7 +20,7 @@ export const publicRoutes = [
 ];
 
 export const protectedRoutes = [
-  { path: 'booking/:hotelId', element: <Booking /> },
+  { path: 'booking/:hotelId/:roomId', element: <Booking /> },
   { path: 'my-bookings', element: <MyBookings /> },
   { path: 'profile', element: <Profile /> },
 ];

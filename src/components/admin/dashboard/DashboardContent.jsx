@@ -56,13 +56,6 @@ const DashboardContent = () => {
       await editHotel(hotelData.uid, formData);
       await fetchHotelData();
       onClose();
-      toast({
-        title: "Éxito",
-        description: "Hotel actualizado correctamente",
-        status: "success",
-        duration: 4000,
-        isClosable: true,
-      });
     } catch (error) {
       console.log(error);
       toast({
@@ -81,6 +74,7 @@ const DashboardContent = () => {
         <Flex justify="space-between" align="center" mb={4}>
           <VStack align="start" spacing={1}>
             <Heading size="lg">{hotelData?.name}</Heading>
+            <Text color="gray.600">{hotelData?.location}</Text>
             <Text color="gray.600">{hotelData?.direction}</Text>
             <Badge colorScheme="blue">{hotelData?.category}</Badge>
           </VStack>

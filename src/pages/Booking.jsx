@@ -5,471 +5,435 @@ import {
   Heading, 
   Text, 
   Button, 
-  Flex, 
   Grid, 
   GridItem, 
   FormControl, 
   FormLabel, 
   Input, 
   Select, 
-  Checkbox, 
   Divider, 
-  Image, 
   Icon, 
   VStack, 
   HStack, 
   useToast,
-  Radio, 
-  RadioGroup,
-  Stack
+  Stack,
+  Card,
+  CardBody,
+  Spinner,
+  Checkbox,
+  CheckboxGroup,
+  useColorModeValue
 } from '@chakra-ui/react'
-import { FiCheck, FiCreditCard, FiCalendar } from 'react-icons/fi'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { hotels } from '../data/hotels'
+import { FiUsers, FiClock, FiAlertCircle } from 'react-icons/fi'
+import { useParams, useNavigate } from 'react-router-dom'
+import useHotel from '../shared/hooks/useHotel'
+import useAuthStore from '../shared/stores/authStore'
+import { useReservation } from '../shared/hooks/useReservation'
+import dayjs from 'dayjs'
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore'
+import DatePicker from 'react-datepicker'
+import "react-datepicker/dist/react-datepicker.css"
+import es from 'date-fns/locale/es'
+
+dayjs.extend(isSameOrAfter)
+dayjs.extend(isSameOrBefore)
 
 function Booking() {
-  const { hotelId } = useParams()
-  const location = useLocation()
+  const { hotelId, roomId } = useParams()
   const navigate = useNavigate()
   const toast = useToast()
-  
-  // Get the room index from the query parameters
-  const queryParams = new URLSearchParams(location.search)
-  const roomIndex = parseInt(queryParams.get('room') || '0')
-  
-  // Find the hotel
-  const hotel = hotels.find(h => h.id === parseInt(hotelId)) || hotels[0]
-  
-  // Get the room type
-  const roomType = hotel.roomTypes ? hotel.roomTypes[roomIndex] : null
-  const roomPrice = roomType ? roomType.price : hotel.price
-  const roomName = roomType ? roomType.name : 'Deluxe Room'
-  
-  // Calculate dates (3 days from now for check-in, 6 days from now for check-out)
-  const getDefaultDates = () => {
-    const checkIn = new Date()
-    checkIn.setDate(checkIn.getDate() + 3)
-    
-    const checkOut = new Date()
-    checkOut.setDate(checkOut.getDate() + 6)
-    
-    return {
-      checkIn: checkIn.toISOString().split('T')[0],
-      checkOut: checkOut.toISOString().split('T')[0]
-    }
-  }
-  
-  // Form state
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    specialRequests: '',
-    paymentMethod: 'creditCard',
-    cardNumber: '',
-    cardHolder: '',
-    expiryDate: '',
-    cvv: '',
-    agreeTerms: false,
-    ...getDefaultDates()
+  const { getHotelById } = useHotel()
+  const { isAuthenticated } = useAuthStore()
+  const [hotel, setHotel] = useState(null)
+  const [selectedRoom, setSelectedRoom] = useState(null)
+  const [bookingData, setBookingData] = useState({
+    checkInDate: null,
+    checkOutDate: null,
+    guests: 1,
+    services: []
   })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const { saveReservation } = useReservation()
   
-  // Loading state
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  
-  // Calculate number of nights
+  const bgColor = useColorModeValue('white', 'gray.800')
+  const borderColor = useColorModeValue('gray.200', 'gray.700')
+  const textColor = useColorModeValue('gray.800', 'white')
+
+  const getDisabledDates = () => {
+    if (!selectedRoom?.nonAvailability) return [];
+    
+    return selectedRoom.nonAvailability.flatMap(period => {
+      const start = dayjs(period.start);
+      const end = dayjs(period.end);
+      const dates = [];
+      let current = start;
+      
+      while (current.isBefore(end) || current.isSame(end, 'day')) {
+        dates.push(new Date(current));
+        current = current.add(1, 'day');
+      }
+      
+      return dates;
+    });
+  };
+
   const calculateNights = () => {
-    const checkIn = new Date(formData.checkIn)
-    const checkOut = new Date(formData.checkOut)
-    const timeDiff = checkOut.getTime() - checkIn.getTime()
-    return Math.ceil(timeDiff / (1000 * 3600 * 24)) || 3 // Default to 3 if calculation fails
+    if (!bookingData.checkInDate || !bookingData.checkOutDate) return 0;
+    const checkIn = dayjs(bookingData.checkInDate);
+    const checkOut = dayjs(bookingData.checkOutDate);
+    return checkOut.diff(checkIn, 'day');
   }
+
+  const handleDateChange = (dates) => {
+    const [start, end] = dates;
+    setBookingData(prev => ({
+      ...prev,
+      checkInDate: start,
+      checkOutDate: end
+    }));
+  };
+
+  const handleGuestsChange = (e) => {
+    setBookingData(prev => ({
+      ...prev,
+      guests: e.target.value
+    }));
+  };
+
+  const handleServicesChange = (selectedServices) => {
+    setBookingData(prev => ({
+      ...prev,
+      services: selectedServices.map(serviceId => ({
+        service: serviceId
+      }))
+    }));
+  };
   
-  const nights = calculateNights()
-  
-  // Handle input changes
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value
-    })
-  }
-  
-  // Handle radio button changes
-  const handleRadioChange = (value) => {
-    setFormData({
-      ...formData,
-      paymentMethod: value
-    })
-  }
-  
-  // Handle form submission
-  const handleSubmit = (e) => {
-    e.preventDefault()
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     
-    if (!formData.agreeTerms) {
+    if (!isAuthenticated) {
       toast({
-        title: 'Please agree to the terms and conditions',
+        title: 'Error',
+        description: 'Debes iniciar sesión para realizar una reserva',
         status: 'error',
-        duration: 3000,
-        isClosable: true,
-      })
-      return
-    }
-    
-    setIsSubmitting(true)
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: 'Booking Confirmed!',
-        description: 'Your hotel booking has been successfully confirmed.',
-        status: 'success',
         duration: 5000,
         isClosable: true,
-      })
-      
-      setIsSubmitting(false)
-      navigate('/my-bookings')
-    }, 1500)
+      });
+      return;
+    }
+    
+    if (!bookingData.checkInDate || !bookingData.checkOutDate) {
+      toast({
+        title: 'Error',
+        description: 'Por favor selecciona las fechas de entrada y salida',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      return;
+    }
+    
+    try {
+      await saveReservation({ 
+        hotel: hotelId, 
+        room: roomId,
+        checkInDate: bookingData.checkInDate.toISOString(),
+        checkOutDate: bookingData.checkOutDate.toISOString(),
+        services: bookingData.services
+      });
+      navigate('/my-bookings');
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.msg || 'No se pudo procesar tu reserva',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+  
+  useEffect(() => {
+    const fetchHotel = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await getHotelById(hotelId)
+        setHotel(response)
+        const room = response.rooms.find(r => r._id === roomId)
+        if (room) {
+          setSelectedRoom(room)
+          console.log(room)
+        } else {
+          setError('No se encontró la habitación seleccionada')
+        }
+      } catch (error) {
+        console.error('Error al cargar el hotel:', error)
+        setError('No se pudo cargar la información del hotel')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchHotel()
+  }, [hotelId, roomId])
+  
+  if (loading) {
+    return (
+      <Box pt={20} pb={16}>
+        <Container maxW="1200px">
+          <Stack spacing={4} align="center" justify="center" minH="400px">
+            <Spinner size="xl" color="teal.500" />
+            <Text>Cargando información del hotel...</Text>
+          </Stack>
+        </Container>
+      </Box>
+    )
+  }
+
+  if (error) {
+    return (
+      <Box pt={20} pb={16}>
+        <Container maxW="1200px">
+          <Stack spacing={4} align="center" justify="center" minH="400px">
+            <Icon as={FiAlertCircle} w={12} h={12} color="red.500" />
+            <Text fontSize="xl" color="red.500">{error}</Text>
+            <Button colorScheme="teal" onClick={() => navigate('/hotels')}>
+              Volver a Hoteles
+            </Button>
+          </Stack>
+        </Container>
+      </Box>
+    )
   }
   
-  // Calculate price breakdown
-  const pricePerNight = roomPrice
-  const subtotal = pricePerNight * nights
-  const taxesAndFees = Math.round(subtotal * 0.15)
-  const total = subtotal + taxesAndFees
+  if (!hotel || !selectedRoom) {
+    return (
+      <Box pt={20} pb={16}>
+        <Container maxW="1200px">
+          <Stack spacing={4} align="center" justify="center" minH="400px">
+            <Icon as={FiAlertCircle} w={12} h={12} color="red.500" />
+            <Text fontSize="xl" color="red.500">No se encontró la información del hotel</Text>
+            <Button colorScheme="teal" onClick={() => navigate('/hotels')}>
+              Volver a Hoteles
+            </Button>
+          </Stack>
+        </Container>
+      </Box>
+    )
+  }
   
+  const customDatePickerStyles = {
+    width: '100%',
+    '.react-datepicker': {
+      fontFamily: 'inherit',
+      border: 'none',
+      boxShadow: 'lg',
+      borderRadius: 'lg',
+      backgroundColor: bgColor,
+      color: textColor,
+    },
+    '.react-datepicker__header': {
+      backgroundColor: 'teal.500',
+      color: 'white',
+      borderBottom: 'none',
+      borderTopLeftRadius: 'lg',
+      borderTopRightRadius: 'lg',
+    },
+    '.react-datepicker__current-month': {
+      color: 'white',
+      fontWeight: 'bold',
+      fontSize: '1.1em',
+    },
+    '.react-datepicker__day-name': {
+      color: 'white',
+      fontWeight: 'bold',
+    },
+    '.react-datepicker__day': {
+      color: textColor,
+      borderRadius: 'md',
+      margin: '0.2em',
+      width: '2.5em',
+      lineHeight: '2.5em',
+    },
+    '.react-datepicker__day:hover': {
+      backgroundColor: 'teal.100',
+    },
+    '.react-datepicker__day--selected': {
+      backgroundColor: 'teal.500',
+      color: 'white',
+    },
+    '.react-datepicker__day--in-range': {
+      backgroundColor: 'teal.100',
+      color: 'teal.700',
+    },
+    '.react-datepicker__day--disabled': {
+      color: 'gray.400',
+      backgroundColor: 'gray.100',
+    },
+    '.react-datepicker__navigation': {
+      top: '1em',
+    },
+    '.react-datepicker__navigation-icon::before': {
+      borderColor: 'white',
+    },
+  };
+
   return (
-    <Box pt={24} pb={16}>
+    <Box pt={20} pb={16}>
       <Container maxW="1200px">
         <Heading as="h1" fontSize={{ base: '2xl', md: '3xl' }} mb={8}>
-          Complete Your Booking
+          Reserva tu Habitación
         </Heading>
         
-        <Grid 
-          templateColumns={{ base: '1fr', lg: '3fr 2fr' }} 
-          gap={8}
-          as="form"
-          onSubmit={handleSubmit}
-        >
-          <Box>
-            {/* Guest Details */}
-            <Box 
-              mb={8} 
-              p={6} 
-              borderWidth="1px" 
-              borderRadius="lg"
-              boxShadow="sm"
-            >
-              <Heading as="h2" fontSize="xl" mb={4}>
-                Guest Details
-              </Heading>
-              
-              <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
-                <FormControl isRequired>
-                  <FormLabel>First Name</FormLabel>
-                  <Input 
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                  />
-                </FormControl>
-                
-                <FormControl isRequired>
-                  <FormLabel>Last Name</FormLabel>
-                  <Input 
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                  />
-                </FormControl>
-                
-                <FormControl isRequired>
-                  <FormLabel>Email Address</FormLabel>
-                  <Input 
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                  />
-                </FormControl>
-                
-                <FormControl isRequired>
-                  <FormLabel>Phone Number</FormLabel>
-                  <Input 
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                  />
-                </FormControl>
-              </Grid>
-              
-              <FormControl mt={4}>
-                <FormLabel>Special Requests</FormLabel>
-                <Input 
-                  name="specialRequests"
-                  value={formData.specialRequests}
-                  onChange={handleInputChange}
-                  placeholder="Any special requests or preferences"
-                />
-              </FormControl>
-            </Box>
-            
-            {/* Booking Details */}
-            <Box 
-              mb={8} 
-              p={6} 
-              borderWidth="1px" 
-              borderRadius="lg"
-              boxShadow="sm"
-            >
-              <Heading as="h2" fontSize="xl" mb={4}>
-                Booking Details
-              </Heading>
-              
-              <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4} mb={4}>
-                <FormControl isRequired>
-                  <FormLabel>Check-in Date</FormLabel>
-                  <Input 
-                    type="date"
-                    name="checkIn"
-                    value={formData.checkIn}
-                    onChange={handleInputChange}
-                  />
-                </FormControl>
-                
-                <FormControl isRequired>
-                  <FormLabel>Check-out Date</FormLabel>
-                  <Input 
-                    type="date"
-                    name="checkOut"
-                    value={formData.checkOut}
-                    onChange={handleInputChange}
-                  />
-                </FormControl>
-              </Grid>
-              
-              <Flex 
-                bg="gray.50" 
-                p={4} 
-                borderRadius="md" 
-                align="center"
-              >
-                <Icon as={FiCalendar} color="brand.500" boxSize={5} mr={3} />
-                <Box>
-                  <Text fontWeight="medium">
-                    Your stay: {nights} {nights === 1 ? 'night' : 'nights'}
-                  </Text>
-                  <Text fontSize="sm" color="gray.600">
-                    {new Date(formData.checkIn).toLocaleDateString()} to {new Date(formData.checkOut).toLocaleDateString()}
-                  </Text>
-                </Box>
-              </Flex>
-            </Box>
-            
-            {/* Payment Information */}
-            <Box 
-              p={6} 
-              borderWidth="1px" 
-              borderRadius="lg"
-              boxShadow="sm"
-            >
-              <Heading as="h2" fontSize="xl" mb={4}>
-                Payment Information
-              </Heading>
-              
-              <RadioGroup 
-                onChange={handleRadioChange} 
-                value={formData.paymentMethod}
-                mb={6}
-              >
-                <Stack direction={{ base: 'column', md: 'row' }} spacing={5}>
-                  <Radio value="creditCard">Credit Card</Radio>
-                  <Radio value="paypal">PayPal</Radio>
-                  <Radio value="payAtHotel">Pay at Hotel</Radio>
-                </Stack>
-              </RadioGroup>
-              
-              {formData.paymentMethod === 'creditCard' && (
-                <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
-                  <GridItem colSpan={{ base: 1, md: 2 }}>
+        <Grid templateColumns={{ base: '1fr', lg: '2fr 1fr' }} gap={8}>
+          <GridItem>
+            <Card bg={bgColor} borderWidth="1px" borderColor={borderColor}>
+              <CardBody>
+                <form onSubmit={handleSubmit}>
+                  <Stack spacing={6}>
+                    {/* Fechas */}
                     <FormControl isRequired>
-                      <FormLabel>Card Number</FormLabel>
-                      <Input 
-                        name="cardNumber"
-                        value={formData.cardNumber}
-                        onChange={handleInputChange}
-                        placeholder="XXXX XXXX XXXX XXXX"
-                      />
-                    </FormControl>
-                  </GridItem>
-                  
-                  <FormControl isRequired>
-                    <FormLabel>Card Holder</FormLabel>
-                    <Input 
-                      name="cardHolder"
-                      value={formData.cardHolder}
-                      onChange={handleInputChange}
-                      placeholder="Name on card"
-                    />
-                  </FormControl>
-                  
-                  <Grid templateColumns="repeat(2, 1fr)" gap={4}>
-                    <FormControl isRequired>
-                      <FormLabel>Expiry Date</FormLabel>
-                      <Input 
-                        name="expiryDate"
-                        value={formData.expiryDate}
-                        onChange={handleInputChange}
-                        placeholder="MM/YY"
-                      />
+                      <FormLabel>Selecciona tus fechas</FormLabel>
+                      <Box sx={customDatePickerStyles}>
+                        <DatePicker
+                          selected={bookingData.checkInDate}
+                          onChange={handleDateChange}
+                          startDate={bookingData.checkInDate}
+                          endDate={bookingData.checkOutDate}
+                          selectsRange
+                          inline
+                          minDate={new Date()}
+                          excludeDates={getDisabledDates()}
+                          monthsShown={2}
+                          locale={es}
+                          dateFormat="dd/MM/yyyy"
+                          showPopperArrow={false}
+                          calendarStartDay={1}
+                          dayClassName={date => {
+                            if (getDisabledDates().some(d => dayjs(d).isSame(date, 'day'))) {
+                              return 'disabled-date';
+                            }
+                            return null;
+                          }}
+                        />
+                      </Box>
                     </FormControl>
                     
+                    {/* Huéspedes */}
                     <FormControl isRequired>
-                      <FormLabel>CVV</FormLabel>
-                      <Input 
-                        name="cvv"
-                        value={formData.cvv}
-                        onChange={handleInputChange}
-                        placeholder="XXX"
-                      />
+                      <FormLabel>Número de Huéspedes</FormLabel>
+                      <Select
+                        name="guests"
+                        value={bookingData.guests}
+                        onChange={handleGuestsChange}
+                      >
+                        {[...Array(selectedRoom?.capacity || 0)].map((_, i) => (
+                          <option key={i + 1} value={i + 1}>
+                            {i + 1} {i === 0 ? 'Huésped' : 'Huéspedes'}
+                          </option>
+                        ))}
+                      </Select>
                     </FormControl>
-                  </Grid>
-                </Grid>
-              )}
-              
-              {formData.paymentMethod === 'paypal' && (
-                <Box p={4} bg="gray.50" borderRadius="md">
-                  <Text>
-                    You will be redirected to PayPal to complete your payment after confirming your booking.
-                  </Text>
-                </Box>
-              )}
-              
-              {formData.paymentMethod === 'payAtHotel' && (
-                <Box p={4} bg="gray.50" borderRadius="md">
-                  <Text>
-                    No payment required now. You will pay directly at the hotel during check-in.
-                  </Text>
-                </Box>
-              )}
-              
-              <Checkbox 
-                mt={6} 
-                name="agreeTerms"
-                isChecked={formData.agreeTerms}
-                onChange={handleInputChange}
-              >
-                I agree to the <Box as="span" color="brand.500">terms and conditions</Box>
-              </Checkbox>
-            </Box>
-          </Box>
+                  
+                    {/* Servicios Adicionales */}
+                    <FormControl>
+                      <FormLabel>Servicios Adicionales</FormLabel>
+                      <CheckboxGroup colorScheme="teal" onChange={handleServicesChange}>
+                        <Stack spacing={2}>
+                          {hotel?.services?.map(service => (
+                            <Checkbox key={service._id} value={service._id}>
+                              {service.name} - ${service.price}
+                            </Checkbox>
+                          ))}
+                        </Stack>
+                      </CheckboxGroup>
+                    </FormControl>
+                    
+                    <Button type="submit" colorScheme="teal" size="lg">
+                      Confirmar Reserva
+                    </Button>
+                  </Stack>
+                </form>
+              </CardBody>
+            </Card>
+          </GridItem>
           
-          {/* Booking Summary */}
-          <Box>
-            <Box 
-              p={6} 
-              borderWidth="1px" 
-              borderRadius="lg"
-              boxShadow="md"
-              position="sticky"
-              top="100px"
-            >
-              <Heading as="h2" fontSize="xl" mb={4}>
-                Booking Summary
-              </Heading>
-              
-              <Flex mb={6} borderRadius="md" overflow="hidden" borderWidth="1px">
-                <Image 
-                  src={hotel.image} 
-                  alt={hotel.name} 
-                  w="100px" 
-                  h="100px" 
-                  objectFit="cover"
-                />
-                <Box p={3}>
-                  <Heading as="h3" fontSize="md" mb={1}>
-                    {hotel.name}
-                  </Heading>
-                  <Text fontSize="sm" color="gray.600" mb={1}>
-                    {hotel.location}
-                  </Text>
-                  <Text fontSize="sm" fontWeight="medium">
-                    {roomName}
-                  </Text>
-                </Box>
-              </Flex>
-              
-              <VStack align="stretch" spacing={3} mb={6}>
-                <Flex justify="space-between">
-                  <Text>Check-in</Text>
-                  <Text fontWeight="medium">
-                    {formData.checkIn ? new Date(formData.checkIn).toLocaleDateString() : 'Not selected'}
-                  </Text>
-                </Flex>
-                
-                <Flex justify="space-between">
-                  <Text>Check-out</Text>
-                  <Text fontWeight="medium">
-                    {formData.checkOut ? new Date(formData.checkOut).toLocaleDateString() : 'Not selected'}
-                  </Text>
-                </Flex>
-                
-                <Flex justify="space-between">
-                  <Text>Room</Text>
-                  <Text fontWeight="medium">{roomName}</Text>
-                </Flex>
-                
-                <Flex justify="space-between">
-                  <Text>Guests</Text>
-                  <Text fontWeight="medium">2 Adults</Text>
-                </Flex>
-              </VStack>
-              
-              <Divider mb={4} />
-              
-              <VStack align="stretch" spacing={3}>
-                <Flex justify="space-between">
-                  <Text>${pricePerNight} x {nights} nights</Text>
-                  <Text>${subtotal}</Text>
-                </Flex>
-                
-                <Flex justify="space-between">
-                  <Text>Taxes and fees</Text>
-                  <Text>${taxesAndFees}</Text>
-                </Flex>
-                
-                <Divider />
-                
-                <Flex justify="space-between" fontWeight="bold">
-                  <Text>Total</Text>
-                  <Text>${total}</Text>
-                </Flex>
-              </VStack>
-              
-              <Button
-                mt={6}
-                w="full"
-                size="lg"
-                colorScheme="teal"
-                type="submit"
-                isLoading={isSubmitting}
-                loadingText="Confirming"
-              >
-                Confirm Booking
-              </Button>
-              
-              <HStack mt={4} spacing={2} justify="center">
-                <Icon as={FiCheck} color="green.500" />
-                <Text fontSize="sm" color="gray.600">
-                  Free cancellation until 24 hours before check-in
-                </Text>
-              </HStack>
-            </Box>
-          </Box>
+          {/* Resumen de la Reserva */}
+          <GridItem>
+            <Card bg="white" borderWidth="1px" borderColor="gray.200" position="sticky" top="100px">
+              <CardBody>
+                <VStack spacing={6} align="stretch">
+                  <Heading size="md">Resumen de la Reserva</Heading>
+                  
+                  {/* Información del Hotel */}
+                  <Box>
+                    <Text fontWeight="medium" mb={2}>{hotel?.name}</Text>
+                    <Text color="gray.600" fontSize="sm">{hotel?.direction}</Text>
+                  </Box>
+                  
+                  <Divider />
+                  
+                  {/* Información de la Habitación */}
+                  <Box>
+                    <Text fontWeight="medium" mb={2}>{selectedRoom?.type}</Text>
+                    <HStack spacing={4}>
+                      <HStack>
+                        <Icon as={FiUsers} />
+                        <Text>{selectedRoom?.capacity} Huéspedes</Text>
+                      </HStack>
+                      <HStack>
+                        <Icon as={FiClock} />
+                        <Text>{calculateNights()} Noches</Text>
+                      </HStack>
+                    </HStack>
+                  </Box>
+                  
+                  <Divider />
+                  
+                  {/* Desglose de Precios */}
+                  <Box>
+                    <HStack justify="space-between" mb={2}>
+                      <Text>Precio por noche</Text>
+                      <Text>${selectedRoom?.price_per_night}</Text>
+                    </HStack>
+                    <HStack justify="space-between" mb={2}>
+                      <Text>Noches</Text>
+                      <Text>{calculateNights()}</Text>
+                    </HStack>
+                    {bookingData.services.length > 0 && (
+                      <>
+                        <Divider my={2} />
+                        <Text fontWeight="medium" mb={2}>Servicios Adicionales:</Text>
+                        {bookingData.services.map(({ service: serviceId }) => {
+                          const service = hotel?.services?.find(s => s._id === serviceId);
+                          return (
+                            <HStack key={serviceId} justify="space-between" mb={1}>
+                              <Text fontSize="sm">{service?.name}</Text>
+                              <Text fontSize="sm">${service?.price}</Text>
+                            </HStack>
+                          );
+                        })}
+                      </>
+                    )}
+                    <Divider my={2} />
+                    <HStack justify="space-between" fontWeight="bold">
+                      <Text>Total</Text>
+                      <Text color="teal.500">
+                        ${calculateNights() * (selectedRoom?.price_per_night || 0) + 
+                          bookingData.services.reduce((total, { service: serviceId }) => {
+                            const service = hotel?.services?.find(s => s._id === serviceId);
+                            return total + (service?.price || 0);
+                          }, 0)}
+                      </Text>
+                    </HStack>
+                  </Box>
+                </VStack>
+              </CardBody>
+            </Card>
+          </GridItem>
         </Grid>
       </Container>
     </Box>

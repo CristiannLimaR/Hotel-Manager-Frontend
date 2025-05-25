@@ -99,11 +99,11 @@ function Header() {
   }
 
   const Links = [
-    { name: 'Home', path: '/' },
-    { name: 'Hotels', path: '/hotels' },
-    { name: 'Events', path: '/events' },
-    { name: 'My Bookings', path: '/my-bookings' },
-    { name: 'About', path: '/about' },
+    { name: 'Inicio', path: '/' },
+    { name: 'Hoteles', path: '/hotels' },
+    { name: 'Eventos', path: '/events' },
+    { name: 'Mis Reservas', path: '/my-bookings' },
+    { name: 'Acerca de', path: '/about' },
   ]
 
   return (

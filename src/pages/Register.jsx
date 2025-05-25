@@ -189,9 +189,9 @@ function Register() {
                   w="100%"
                   mt={2}
                   isLoading={isRegisterLoading}
-                  loadingText="Creating Account"
+                  loadingText="Creando Cuenta"
                 >
-                  Create Account
+                  Crear Cuenta
                 </Button>
               </VStack>
             </Box>
@@ -200,14 +200,14 @@ function Register() {
             
             <Box textAlign="center">
               <Text>
-                Already have an account?{' '}
+                ¿Ya tienes una cuenta?{' '}
                 <Text 
                   as={RouterLink} 
                   to="/login" 
                   color="brand.500" 
                   fontWeight="medium"
                 >
-                  Sign In
+                  Iniciar Sesión
                 </Text>
               </Text>
             </Box>

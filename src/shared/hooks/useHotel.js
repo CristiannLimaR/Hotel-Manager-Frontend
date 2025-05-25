@@ -1,5 +1,5 @@
 import { useState} from "react";
-import { getHotels as getHotelsRequest, saveHotel as saveHotelRequest, updateHotel as updateHotelRequest, deleteHotel as deleteHotelRequest, getHotelsByAdmin as getHotelsByAdminRequest } from "../../services/api";
+import { getHotels as getHotelsRequest, saveHotel as saveHotelRequest, updateHotel as updateHotelRequest, deleteHotel as deleteHotelRequest, getHotelsByAdmin as getHotelsByAdminRequest, getHotelById as getHotelByIdRequest } from "../../services/api";
 import { useToast } from "@chakra-ui/react";
 const useHotel = () => {
     const toast = useToast();
@@ -122,6 +122,24 @@ const useHotel = () => {
 
         setIsLoading(false);
     }
+
+    const getHotelById = async (id) => {
+        const response = await getHotelByIdRequest(id);
+        if(response.error) {
+            toast({
+                title: "Error",
+                description: response.e.message,
+                status: "error",
+                duration: 3000,
+                isClosable: true,
+            });
+            setIsLoading(false);
+            return;
+        }
+
+        setIsLoading(false);
+        return response.hotel;
+    }
         
     return {
         getHotels,
@@ -129,6 +147,7 @@ const useHotel = () => {
         saveHotel,
         editHotel,
         deleteHotel,
+        getHotelById,
         isLoading,
     }
 }

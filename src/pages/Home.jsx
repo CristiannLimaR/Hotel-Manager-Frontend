@@ -14,19 +14,26 @@ import { Link as RouterLink } from 'react-router-dom'
 import { FiArrowRight } from 'react-icons/fi'
 import SearchBar from '../components/common/SearchBar'
 import HotelCard from '../components/hotels/HotelCard'
-import OfferCard from '../components/offers/OfferCard'
 import TestimonialCard from '../components/testimonials/TestimonialCard'
-import { hotels } from '../data/hotels'
-import { offers } from '../data/offers'
 import { testimonials } from '../data/testimonials'
-import useAuthStore from '../shared/stores/authStore'
+import { useState, useEffect } from 'react'
+import  useHotel  from '../shared/hooks/useHotel'
 function Home() {
   const heroImageHeight = useBreakpointValue({ base: '500px', md: '600px', lg: '650px' })
   const heroTextWidth = useBreakpointValue({ base: '100%', md: '80%', lg: '60%' })
-  const user = useAuthStore((state) => state.user)
-  console.log(user)
+  const { getHotels } = useHotel()
+  const [hotels, setHotels] = useState([])
+
+  useEffect(() => {
+    const fetchHotels = async () => {
+      const response = await getHotels()
+      setHotels(response)
+    }
+    fetchHotels()
+  }, [])
+
+  const featuredHotels = hotels.slice(0, 4)
   
-  const featuredHotels = hotels.filter(hotel => hotel.featured).slice(0, 4)
   
   return (
     <Box>
@@ -68,7 +75,7 @@ function Home() {
             borderRadius="full"
             mb={4}
           >
-            The Ultimate Hotel Experience
+            La Mejor Experiencia Hotelera
           </Badge>
           
           <Box maxW={heroTextWidth}>
@@ -80,7 +87,7 @@ function Home() {
               lineHeight="1.2"
               mb={4}
             >
-              Discover Your Perfect Gateway Destination
+              Descubre Tu Destino Perfecto
             </Heading>
             
             <Text 
@@ -88,7 +95,7 @@ function Home() {
               color="white" 
               mb={6}
             >
-              Unparalleled luxury and comfort await at the world's most exclusive hotels and resorts. Begin your journey today.
+              Lujo y confort sin igual te esperan en los hoteles y resorts más exclusivos del mundo. Comienza tu viaje hoy.
             </Text>
           </Box>
           
@@ -113,7 +120,7 @@ function Home() {
             mb={3} 
             textAlign="center"
           >
-            Featured Destination
+            Destinos Destacados
           </Heading>
           
           <Text 
@@ -124,12 +131,12 @@ function Home() {
             mx="auto" 
             mb={12}
           >
-            Discover our handpicked selection of exceptional properties around the world, offering unparalleled luxury and unforgettable experiences.
+            Descubre nuestra selección de propiedades excepcionales alrededor del mundo, ofreciendo lujo sin igual y experiencias inolvidables.
           </Text>
           
           <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={8}>
             {featuredHotels.map((hotel) => (
-              <HotelCard key={hotel.id} hotel={hotel} />
+              <HotelCard key={hotel.uid} hotel={hotel} />
             ))}
           </SimpleGrid>
           
@@ -141,48 +148,13 @@ function Home() {
               variant="outline" 
               colorScheme="teal"
             >
-              View All Destinations
+              Ver Todos los Destinos
             </Button>
           </Flex>
         </Container>
       </Box>
       
-      <Box py={16}>
-        <Container maxW="1200px">
-          <Flex 
-            justifyContent="space-between" 
-            alignItems="center" 
-            mb={12}
-            flexDirection={{ base: 'column', md: 'row' }}
-            textAlign={{ base: 'center', md: 'left' }}
-          >
-            <Box mb={{ base: 6, md: 0 }}>
-              <Heading as="h2" fontSize={{ base: '2xl', md: '3xl' }} mb={3}>
-                Exclusive Offers
-              </Heading>
-              <Text color="gray.600" maxW="600px">
-                Take advantage of our limited-time offers and special packages to enhance your stay and create unforgettable memories.
-              </Text>
-            </Box>
-            
-            <Button 
-              as={RouterLink} 
-              to="/offers"
-              rightIcon={<FiArrowRight />} 
-              colorScheme="teal" 
-              variant="outline"
-            >
-              View All Offers
-            </Button>
-          </Flex>
-          
-          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
-            {offers.slice(0, 3).map((offer) => (
-              <OfferCard key={offer.id} offer={offer} />
-            ))}
-          </SimpleGrid>
-        </Container>
-      </Box>
+      
       
       <Box py={16} bg="gray.50">
         <Container maxW="1200px">
@@ -192,7 +164,7 @@ function Home() {
             mb={3} 
             textAlign="center"
           >
-            What Our Guests Say
+            Lo Que Dicen Nuestros Huéspedes
           </Heading>
           
           <Text 
@@ -203,7 +175,7 @@ function Home() {
             mx="auto" 
             mb={12}
           >
-            Discover why discerning travelers consistently choose QuickStay for their exclusive and luxurious accommodations around the world.
+            Descubre por qué los viajeros más exigentes eligen QuickStay para sus alojamientos exclusivos y lujosos alrededor del mundo.
           </Text>
           
           <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
@@ -222,11 +194,11 @@ function Home() {
             mx="auto"
           >
             <Heading as="h2" fontSize={{ base: '2xl', md: '3xl' }} mb={6}>
-              Stay Inspired
+              Mantente Inspirado
             </Heading>
             
             <Text fontSize="md" mb={8}>
-              Join our newsletter and be the first to discover new destinations, exclusive offers, and travel inspiration.
+              Únete a nuestro boletín y sé el primero en descubrir nuevos destinos, ofertas exclusivas e inspiración para viajar.
             </Text>
             
             <Flex 
@@ -235,7 +207,7 @@ function Home() {
               flexDirection={{ base: 'column', md: 'row' }}
             >
               <Input 
-                placeholder="Enter your email" 
+                placeholder="Ingresa tu correo electrónico" 
                 bg="white" 
                 color="gray.800" 
                 _placeholder={{ color: 'gray.500' }}
@@ -249,12 +221,12 @@ function Home() {
                 size="lg"
                 minW={{ md: '150px' }}
               >
-                Subscribe
+                Suscribirse
               </Button>
             </Flex>
             
             <Text fontSize="xs" color="gray.400" mt={4}>
-              By subscribing, you agree to our Privacy Policy and consent to receive updates.
+              Al suscribirte, aceptas nuestra Política de Privacidad y consientes recibir actualizaciones.
             </Text>
           </Box>
         </Container>

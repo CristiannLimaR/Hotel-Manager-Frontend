@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Box, 
   Container, 
@@ -27,129 +27,157 @@ import {
   ModalFooter, 
   ModalBody, 
   ModalCloseButton,
-  useToast
+  useToast,
+  Stack,
+  FormControl,
+  FormLabel,
+  Select,
+  CheckboxGroup,
+  Checkbox
 } from '@chakra-ui/react'
 import { 
   FiCalendar, 
   FiMapPin, 
-  FiCheckCircle, 
   FiClock, 
   FiUserCheck, 
-  FiDownload, 
   FiEdit, 
-  FiXCircle 
+  FiXCircle,
+  FiList,
+  FiUsers
 } from 'react-icons/fi'
 import { Link as RouterLink } from 'react-router-dom'
-import { hotels } from '../data/hotels'
+import { useReservation } from '../shared/hooks/useReservation'
+import DatePicker from 'react-datepicker'
+import "react-datepicker/dist/react-datepicker.css"
+import es from 'date-fns/locale/es'
+import dayjs from 'dayjs'
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore'
 
-// Sample booking data
-const mockBookings = [
-  {
-    id: 1,
-    hotelId: 1,
-    roomType: 'Deluxe King Suite',
-    checkIn: '2025-06-15',
-    checkOut: '2025-06-18',
-    guests: 2,
-    status: 'upcoming',
-    bookingDate: '2025-05-01',
-    totalAmount: 897,
-    paymentMethod: 'Credit Card',
-    confirmationNumber: 'BK87652341'
-  },
-  {
-    id: 2,
-    hotelId: 3,
-    roomType: 'Premium Ocean View',
-    checkIn: '2025-07-10',
-    checkOut: '2025-07-15',
-    guests: 2,
-    status: 'upcoming',
-    bookingDate: '2025-05-03',
-    totalAmount: 1450,
-    paymentMethod: 'PayPal',
-    confirmationNumber: 'BK45219873'
-  },
-  {
-    id: 3,
-    hotelId: 4,
-    roomType: 'Executive Suite',
-    checkIn: '2025-04-05',
-    checkOut: '2025-04-08',
-    guests: 2,
-    status: 'completed',
-    bookingDate: '2025-03-01',
-    totalAmount: 935,
-    paymentMethod: 'Credit Card',
-    confirmationNumber: 'BK32654987'
-  },
-  {
-    id: 4,
-    hotelId: 2,
-    roomType: 'Deluxe Twin Room',
-    checkIn: '2025-02-20',
-    checkOut: '2025-02-22',
-    guests: 2,
-    status: 'cancelled',
-    bookingDate: '2025-01-15',
-    totalAmount: 562,
-    paymentMethod: 'Credit Card',
-    confirmationNumber: 'BK98763421',
-    cancellationDate: '2025-02-01'
-  }
-]
+dayjs.extend(isSameOrAfter)
+dayjs.extend(isSameOrBefore)
 
 function BookingCard({ booking }) {
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const { isOpen: isServicesOpen, onOpen: onServicesOpen, onClose: onServicesClose } = useDisclosure()
+  const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure()
+  const { editReservation, deleteReservation } = useReservation()
   const toast = useToast()
   
-  // Find hotel data
-  const hotel = hotels.find(h => h.id === booking.hotelId) || hotels[0]
-  
-  // Calculate nights
-  const checkIn = new Date(booking.checkIn)
-  const checkOut = new Date(booking.checkOut)
+  const [editData, setEditData] = useState({
+    checkInDate: new Date(booking.checkInDate),
+    checkOutDate: new Date(booking.checkOutDate),
+    guests: booking.guests,
+    services: booking.services?.map(service => ({
+      service: service.service._id,
+      quantity: service.quantity
+    })) || []
+  })
+
+  const getDisabledDates = () => {
+    if (!booking.room?.nonAvailability) return [];
+    
+    return booking.room.nonAvailability.flatMap(period => {
+      const start = dayjs(period.start);
+      const end = dayjs(period.end);
+      const dates = [];
+      let current = start;
+      
+      while (current.isBefore(end) || current.isSame(end, 'day')) {
+        dates.push(new Date(current));
+        current = current.add(1, 'day');
+      }
+      
+      return dates;
+    });
+  };
+
+  const calculateNights = () => {
+    if (!editData.checkInDate || !editData.checkOutDate) return 0;
+    const checkIn = dayjs(editData.checkInDate);
+    const checkOut = dayjs(editData.checkOutDate);
+    return checkOut.diff(checkIn, 'day');
+  }
+
+  const handleDateChange = (dates) => {
+    const [start, end] = dates;
+    setEditData(prev => ({
+      ...prev,
+      checkInDate: start,
+      checkOutDate: end
+    }));
+  };
+
+  const handleGuestsChange = (e) => {
+    setEditData(prev => ({
+      ...prev,
+      guests: e.target.value
+    }));
+  };
+
+  const handleServicesChange = (selectedServices) => {
+    setEditData(prev => ({
+      ...prev,
+      services: selectedServices.map(serviceId => ({
+        service: serviceId,
+        quantity: 1
+      }))
+    }));
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const reservationData = {
+        checkInDate: editData.checkInDate.toISOString(),
+        checkOutDate: editData.checkOutDate.toISOString(),
+        guests: editData.guests,
+        services: editData.services
+      };
+
+      await editReservation(booking._id, reservationData);
+      
+      
+      onEditClose();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.msg || 'No se pudo actualizar tu reserva',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const checkIn = new Date(booking.checkInDate)
+  const checkOut = new Date(booking.checkOutDate)
   const nights = Math.round((checkOut - checkIn) / (1000 * 60 * 60 * 24))
   
-  // Format dates
   const formatDate = (dateString) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric', year: 'numeric' })
   }
   
-  // Get status badge
   const getStatusBadge = () => {
     switch(booking.status) {
-      case 'upcoming':
-        return <Badge colorScheme="green">Upcoming</Badge>
+      case 'active':
+        return <Badge colorScheme="green">Activa</Badge>
       case 'completed':
-        return <Badge colorScheme="blue">Completed</Badge>
+        return <Badge colorScheme="blue">Completada</Badge>
       case 'cancelled':
-        return <Badge colorScheme="red">Cancelled</Badge>
+        return <Badge colorScheme="red">Cancelada</Badge>
       default:
-        return <Badge>Unknown</Badge>
+        return <Badge>Desconocido</Badge>
     }
   }
   
-  // Handle booking cancellation
   const [isCancelling, setIsCancelling] = useState(false)
   
   const handleCancelBooking = () => {
-    setIsCancelling(true)
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsCancelling(false)
-      onClose()
-      
-      toast({
-        title: 'Booking Cancelled',
-        description: `Your booking at ${hotel.name} has been cancelled successfully.`,
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
-      })
-    }, 1500)
+    deleteReservation(booking._id)
+    onClose()
   }
   
   return (
@@ -167,8 +195,8 @@ function BookingCard({ booking }) {
       <Grid templateColumns={{ base: '1fr', md: '250px 1fr' }}>
         <GridItem>
           <Image 
-            src={hotel.image} 
-            alt={hotel.name} 
+            src={booking.hotel.images[0]} 
+            alt={booking.hotel.name} 
             h="100%" 
             w="100%" 
             objectFit="cover" 
@@ -184,13 +212,13 @@ function BookingCard({ booking }) {
           >
             <Box>
               <Heading as="h3" fontSize="lg" mb={1}>
-                {hotel.name}
+                {booking.hotel.name}
               </Heading>
               
               <Flex align="center" mb={2}>
                 <Icon as={FiMapPin} color="gray.500" mr={1} />
                 <Text fontSize="sm" color="gray.600">
-                  {hotel.location}
+                  {booking.hotel.location}
                 </Text>
               </Flex>
             </Box>
@@ -207,10 +235,10 @@ function BookingCard({ booking }) {
           >
             <VStack align="flex-start" spacing={1}>
               <Text fontWeight="medium" fontSize="sm" color="gray.500">
-                Room Type
+                Tipo de Habitación
               </Text>
               <Text fontWeight="medium">
-                {booking.roomType}
+                {booking.room.type}
               </Text>
             </VStack>
             
@@ -222,7 +250,7 @@ function BookingCard({ booking }) {
                 </Text>
               </HStack>
               <Text fontWeight="medium">
-                {formatDate(booking.checkIn)}
+                {formatDate(booking.checkInDate)}
               </Text>
             </VStack>
             
@@ -234,7 +262,7 @@ function BookingCard({ booking }) {
                 </Text>
               </HStack>
               <Text fontWeight="medium">
-                {formatDate(booking.checkOut)}
+                {formatDate(booking.checkOutDate)}
               </Text>
             </VStack>
           </Grid>
@@ -243,21 +271,14 @@ function BookingCard({ booking }) {
             <Flex align="center">
               <Icon as={FiClock} color="gray.500" mr={2} />
               <Text fontSize="sm">
-                {nights} {nights === 1 ? 'night' : 'nights'}
+                {nights} {nights === 1 ? 'noche' : 'noches'}
               </Text>
             </Flex>
             
             <Flex align="center">
               <Icon as={FiUserCheck} color="gray.500" mr={2} />
               <Text fontSize="sm">
-                {booking.guests} Guests
-              </Text>
-            </Flex>
-            
-            <Flex align="center">
-              <Icon as={FiCheckCircle} color="gray.500" mr={2} />
-              <Text fontSize="sm">
-                Conf #{booking.confirmationNumber}
+                {booking.guests} Huéspedes
               </Text>
             </Flex>
           </HStack>
@@ -270,29 +291,29 @@ function BookingCard({ booking }) {
             flexDirection={{ base: 'column', md: 'row' }}
           >
             <Text fontWeight="bold">
-              Total: ${booking.totalAmount}
+              Total: ${booking.room.price_per_night * nights}
             </Text>
             
             <HStack spacing={3} mt={{ base: 3, md: 0 }}>
-              <Button 
-                size="sm" 
-                leftIcon={<FiDownload />} 
+              <Button
+                size="sm"
+                leftIcon={<FiList />}
                 variant="outline"
+                colorScheme="purple"
+                onClick={onServicesOpen}
               >
-                Receipt
+                Servicios
               </Button>
-              
-              {booking.status === 'upcoming' && (
+              {booking.status === 'active' && (
                 <>
                   <Button 
-                    as={RouterLink} 
-                    to={`/hotels/${hotel.id}`}
                     size="sm" 
                     leftIcon={<FiEdit />} 
                     variant="outline" 
                     colorScheme="teal"
+                    onClick={onEditOpen}
                   >
-                    Modify
+                    Modificar
                   </Button>
                   
                   <Button 
@@ -302,7 +323,7 @@ function BookingCard({ booking }) {
                     variant="outline"
                     onClick={onOpen}
                   >
-                    Cancel
+                    Cancelar
                   </Button>
                 </>
               )}
@@ -311,34 +332,196 @@ function BookingCard({ booking }) {
         </GridItem>
       </Grid>
       
-      {/* Cancellation Confirmation Modal */}
+      {/* Modal de Servicios Adicionales */}
+      <Modal isOpen={isServicesOpen} onClose={onServicesClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Servicios Adicionales</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            {booking.services && booking.services.length > 0 ? (
+              <VStack align="start" spacing={4}>
+                {booking.services.map((service) => (
+                  <Box key={service._id} w="100%" p={3} borderWidth="1px" borderRadius="md">
+                    <HStack justify="space-between">
+                      <VStack align="start" spacing={1}>
+                        <Text fontWeight="medium">{service.service.name}</Text>
+                        <Text fontSize="sm" color="gray.600">{service.service.description}</Text>
+                      </VStack>
+                      <VStack align="end" spacing={1}>
+                        <Text fontWeight="medium">${service.service.price} c/u</Text>
+                      </VStack>
+                    </HStack>
+                  </Box>
+                ))}
+              </VStack>
+            ) : (
+              <Text color="gray.500">No hay servicios adicionales para esta reserva.</Text>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="purple" onClick={onServicesClose}>
+              Cerrar
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal de Edición */}
+      <Modal isOpen={isEditOpen} onClose={onEditClose} size="xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Modificar Reserva</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <form onSubmit={handleEditSubmit}>
+              <Stack spacing={6}>
+                {/* Fechas */}
+                <FormControl isRequired>
+                  <FormLabel>Selecciona tus fechas</FormLabel>
+                  <Box>
+                    <DatePicker
+                      selected={editData.checkInDate}
+                      onChange={handleDateChange}
+                      startDate={editData.checkInDate}
+                      endDate={editData.checkOutDate}
+                      selectsRange
+                      inline
+                      minDate={new Date()}
+                      excludeDates={getDisabledDates()}
+                      monthsShown={2}
+                      locale={es}
+                      dateFormat="dd/MM/yyyy"
+                      showPopperArrow={false}
+                      calendarStartDay={1}
+                    />
+                  </Box>
+                </FormControl>
+                
+                {/* Huéspedes */}
+                <FormControl isRequired>
+                  <FormLabel>Número de Huéspedes</FormLabel>
+                  <Select
+                    name="guests"
+                    value={editData.guests}
+                    onChange={handleGuestsChange}
+                  >
+                    {[...Array(booking.room?.capacity || 0)].map((_, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        {i + 1} {i === 0 ? 'Huésped' : 'Huéspedes'}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+              
+                {/* Servicios Adicionales */}
+                <FormControl>
+                  <FormLabel>Servicios Adicionales</FormLabel>
+                  <CheckboxGroup 
+                    colorScheme="teal" 
+                    onChange={handleServicesChange}
+                    defaultValue={editData.services.map(s => s.service)}
+                  >
+                    <Stack spacing={2}>
+                      {booking.hotel?.services?.map(service => (
+                        <Checkbox 
+                          key={service._id} 
+                          value={service._id}
+                          isChecked={editData.services.some(s => s.service === service._id)}
+                        >
+                          {service.name} - ${service.price}
+                        </Checkbox>
+                      ))}
+                    </Stack>
+                  </CheckboxGroup>
+                </FormControl>
+
+                {/* Resumen de la Reserva */}
+                <Box p={4} borderWidth="1px" borderRadius="md" bg="gray.50">
+                  <VStack spacing={4} align="stretch">
+                    <Heading size="sm">Resumen de la Reserva</Heading>
+                    
+                    <HStack justify="space-between">
+                      <Text>Precio por noche</Text>
+                      <Text>${booking.room.price_per_night}</Text>
+                    </HStack>
+                    
+                    <HStack justify="space-between">
+                      <Text>Noches</Text>
+                      <Text>{calculateNights()}</Text>
+                    </HStack>
+                    
+                    {editData.services.length > 0 && (
+                      <>
+                        <Divider />
+                        <Text fontWeight="medium">Servicios Adicionales:</Text>
+                        {editData.services.map(({ service: serviceId }) => {
+                          const service = booking.hotel?.services?.find(s => s._id === serviceId);
+                          return (
+                            <HStack key={serviceId} justify="space-between">
+                              <Text fontSize="sm">{service?.name}</Text>
+                              <Text fontSize="sm">${service?.price}</Text>
+                            </HStack>
+                          );
+                        })}
+                      </>
+                    )}
+                    
+                    <Divider />
+                    <HStack justify="space-between" fontWeight="bold">
+                      <Text>Total</Text>
+                      <Text color="teal.500">
+                        ${calculateNights() * (booking.room.price_per_night || 0) + 
+                          editData.services.reduce((total, { service: serviceId }) => {
+                            const service = booking.hotel?.services?.find(s => s._id === serviceId);
+                            return total + (service?.price || 0);
+                          }, 0)}
+                      </Text>
+                    </HStack>
+                  </VStack>
+                </Box>
+              </Stack>
+            </form>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={onEditClose}>
+              Cancelar
+            </Button>
+            <Button colorScheme="teal" onClick={handleEditSubmit}>
+              Guardar Cambios
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal de Confirmación de Cancelación */}
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Cancel Booking</ModalHeader>
+          <ModalHeader>Cancelar Reserva</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <Text>
-              Are you sure you want to cancel your booking at <b>{hotel.name}</b> for <b>{formatDate(booking.checkIn)}</b>?
+              ¿Estás seguro que deseas cancelar tu reserva en <b>{booking.hotel.name}</b> para <b>{formatDate(booking.checkInDate)}</b>?
             </Text>
             {checkIn <= new Date() && (
               <Text mt={4} color="red.500">
-                Please note that this booking is within the 24-hour cancellation window and may be subject to charges.
+                Ten en cuenta que esta reserva está dentro del período de cancelación de 24 horas y puede estar sujeta a cargos.
               </Text>
             )}
           </ModalBody>
           
           <ModalFooter>
             <Button mr={3} onClick={onClose}>
-              Keep Booking
+              Mantener Reserva
             </Button>
             <Button 
               colorScheme="red" 
               onClick={handleCancelBooking}
               isLoading={isCancelling}
-              loadingText="Cancelling"
+              loadingText="Cancelando"
             >
-              Yes, Cancel
+              Sí, Cancelar
             </Button>
           </ModalFooter>
         </ModalContent>
@@ -348,51 +531,62 @@ function BookingCard({ booking }) {
 }
 
 function MyBookings() {
-  const upcomingBookings = mockBookings.filter(booking => booking.status === 'upcoming')
-  const completedBookings = mockBookings.filter(booking => booking.status === 'completed')
-  const cancelledBookings = mockBookings.filter(booking => booking.status === 'cancelled')
+  const [reservations, setReservations] = useState([])
+  const { getReservationsByUser } = useReservation()
+  const fetchReservations = async () => {
+    const response = await getReservationsByUser()
+    setReservations(response)
+  }
+  
+  useEffect(() => {
+    fetchReservations()
+  }, [])
+  const activeBookings = reservations?.filter(booking => booking.status === 'active')
+  const completedBookings = reservations?.filter(booking => booking.status === 'completed')
+  const cancelledBookings = reservations?.filter(booking => booking.status === 'cancelled')
+  
   
   return (
     <Box pt={24} pb={16}>
       <Container maxW="1200px">
         <Heading as="h1" fontSize={{ base: '2xl', md: '3xl' }} mb={2}>
-          My Bookings
+          Mis Reservas
         </Heading>
         
         <Text color="gray.600" mb={8}>
-          Manage your upcoming stays and review your past bookings
+          Gestiona tus estancias activas y revisa tus reservas anteriores
         </Text>
         
         <Tabs colorScheme="teal" isLazy>
           <TabList mb={6}>
-            <Tab fontWeight="medium">Upcoming ({upcomingBookings.length})</Tab>
-            <Tab fontWeight="medium">Completed ({completedBookings.length})</Tab>
-            <Tab fontWeight="medium">Cancelled ({cancelledBookings.length})</Tab>
+            <Tab fontWeight="medium">Activas ({activeBookings.length})</Tab>
+            <Tab fontWeight="medium">Completadas ({completedBookings.length})</Tab>
+            <Tab fontWeight="medium">Canceladas ({cancelledBookings.length})</Tab>
           </TabList>
           
           <TabPanels>
-            {/* Upcoming Bookings */}
+            {/* Active Bookings */}
             <TabPanel px={0}>
-              {upcomingBookings.length === 0 ? (
+              {activeBookings.length === 0 ? (
                 <Box textAlign="center" py={10}>
                   <Heading as="h3" fontSize="lg" mb={4}>
-                    No upcoming bookings
+                    No hay reservas activas
                   </Heading>
                   <Text color="gray.600" mb={6}>
-                    You don't have any upcoming hotel stays. Ready to plan your next trip?
+                    No tienes ninguna estancia activa. ¿Listo para planear tu próximo viaje?
                   </Text>
                   <Button 
                     as={RouterLink} 
                     to="/hotels"
                     colorScheme="teal"
                   >
-                    Find Hotels
+                    Buscar Hoteles
                   </Button>
                 </Box>
               ) : (
                 <VStack spacing={6} align="stretch">
-                  {upcomingBookings.map(booking => (
-                    <BookingCard key={booking.id} booking={booking} />
+                  {activeBookings.map(booking => (
+                    <BookingCard key={booking.uid} booking={booking} />
                   ))}
                 </VStack>
               )}
@@ -403,17 +597,17 @@ function MyBookings() {
               {completedBookings.length === 0 ? (
                 <Box textAlign="center" py={10}>
                   <Heading as="h3" fontSize="lg" mb={4}>
-                    No completed bookings
+                    No hay reservas completadas
                   </Heading>
                   <Text color="gray.600" mb={6}>
-                    You don't have any completed stays yet.
+                    Aún no tienes estancias completadas.
                   </Text>
                   <Button 
                     as={RouterLink} 
                     to="/hotels"
                     colorScheme="teal"
                   >
-                    Find Hotels
+                    Buscar Hoteles
                   </Button>
                 </Box>
               ) : (
@@ -430,10 +624,10 @@ function MyBookings() {
               {cancelledBookings.length === 0 ? (
                 <Box textAlign="center" py={10}>
                   <Heading as="h3" fontSize="lg" mb={4}>
-                    No cancelled bookings
+                    No hay reservas canceladas
                   </Heading>
                   <Text color="gray.600">
-                    You don't have any cancelled bookings.
+                    No tienes reservas canceladas.
                   </Text>
                 </Box>
               ) : (

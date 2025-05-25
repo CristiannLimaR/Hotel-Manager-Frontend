@@ -7,7 +7,6 @@ import {
   SimpleGrid, 
   Flex, 
   Select, 
-  Input, 
   Button, 
   HStack, 
   Stack, 
@@ -18,20 +17,30 @@ import {
   RangeSliderThumb,
   useColorModeValue
 } from '@chakra-ui/react'
-import { FiFilter, FiMapPin } from 'react-icons/fi'
 import { useLocation } from 'react-router-dom'
 import HotelCard from '../components/hotels/HotelCard'
 import SearchBar from '../components/common/SearchBar'
-import { hotels } from '../data/hotels'
+import useHotel from '../shared/hooks/useHotel'
 
 function Hotels() {
   const location = useLocation()
-  const [filteredHotels, setFilteredHotels] = useState(hotels)
+  const { getHotels } = useHotel()
+  const [hotels, setHotels] = useState([])
+  const [filteredHotels, setFilteredHotels] = useState([])
   const [filters, setFilters] = useState({
-    priceRange: [0, 1000],
-    rating: 0,
-    amenities: []
+    priceRange: [500, 3000],
+    category: '',
+    facilities: []
   })
+
+  useEffect(() => {
+    const fetchHotels = async () => {
+      const response = await getHotels()
+      setHotels(response)
+      setFilteredHotels(response)
+    }
+    fetchHotels()
+  }, [])
   
   // Initialize from search params if available
   useEffect(() => {
@@ -40,7 +49,7 @@ function Hotels() {
       if (destination) {
         // Filter hotels based on destination
         const filtered = hotels.filter(hotel => 
-          hotel.location.toLowerCase().includes(destination.toLowerCase())
+          hotel.direction.toLowerCase().includes(destination.toLowerCase())
         )
         setFilteredHotels(filtered.length > 0 ? filtered : hotels)
       }
@@ -54,26 +63,26 @@ function Hotels() {
     })
   }
   
-  const handleRatingChange = (e) => {
+  const handleCategoryChange = (e) => {
     setFilters({
       ...filters,
-      rating: Number(e.target.value)
+      category: e.target.value
     })
   }
   
-  const handleAmenityChange = (e) => {
+  const handleFacilityChange = (e) => {
     const { value, checked } = e.target
-    let updatedAmenities = [...filters.amenities]
+    let updatedFacilities = [...filters.facilities]
     
     if (checked) {
-      updatedAmenities.push(value)
+      updatedFacilities.push(value)
     } else {
-      updatedAmenities = updatedAmenities.filter(item => item !== value)
+      updatedFacilities = updatedFacilities.filter(item => item !== value)
     }
     
     setFilters({
       ...filters,
-      amenities: updatedAmenities
+      facilities: updatedFacilities
     })
   }
   
@@ -82,18 +91,19 @@ function Hotels() {
     
     // Filter by price range
     results = results.filter(hotel => 
-      hotel.price >= filters.priceRange[0] && hotel.price <= filters.priceRange[1]
+      hotel.rangeOfPrices.min >= filters.priceRange[0] && 
+      hotel.rangeOfPrices.max <= filters.priceRange[1]
     )
     
-    // Filter by rating
-    if (filters.rating > 0) {
-      results = results.filter(hotel => hotel.rating >= filters.rating)
+    // Filter by category
+    if (filters.category) {
+      results = results.filter(hotel => hotel.category === filters.category)
     }
     
-    // Filter by amenities
-    if (filters.amenities.length > 0) {
+    // Filter by facilities
+    if (filters.facilities.length > 0) {
       results = results.filter(hotel => 
-        filters.amenities.every(amenity => hotel.amenities.includes(amenity))
+        filters.facilities.every(facility => hotel.facilities.includes(facility))
       )
     }
     
@@ -102,9 +112,9 @@ function Hotels() {
   
   const resetFilters = () => {
     setFilters({
-      priceRange: [0, 1000],
-      rating: 0,
-      amenities: []
+      priceRange: [500, 3000],
+      category: '',
+      facilities: []
     })
     setFilteredHotels(hotels)
   }
@@ -159,16 +169,16 @@ function Hotels() {
                 {/* Price Range */}
                 <Box>
                   <Text fontWeight="medium" mb={2}>
-                    Price Range
+                    Rango de Precios
                   </Text>
                   <Flex justify="space-between" mb={2}>
                     <Text fontSize="sm">${filters.priceRange[0]}</Text>
                     <Text fontSize="sm">${filters.priceRange[1]}</Text>
                   </Flex>
                   <RangeSlider
-                    min={0}
-                    max={1000}
-                    step={50}
+                    min={500}
+                    max={3000}
+                    step={100}
                     value={filters.priceRange}
                     onChange={handlePriceChange}
                     colorScheme="teal"
@@ -181,62 +191,50 @@ function Hotels() {
                   </RangeSlider>
                 </Box>
                 
-                {/* Rating */}
+                {/* Category */}
                 <Box>
                   <Text fontWeight="medium" mb={2}>
-                    Minimum Rating
+                    Categoría
                   </Text>
                   <Select 
-                    value={filters.rating} 
-                    onChange={handleRatingChange}
+                    value={filters.category} 
+                    onChange={handleCategoryChange}
                   >
-                    <option value={0}>Any Rating</option>
-                    <option value={3}>3+ Stars</option>
-                    <option value={4}>4+ Stars</option>
-                    <option value={4.5}>4.5+ Stars</option>
+                    <option value="">Todas las Categorías</option>
+                    <option value="1 Estrella">1 Estrella</option>
+                    <option value="2 Estrellas">2 Estrellas</option>
+                    <option value="3 Estrellas">3 Estrellas</option>
+                    <option value="4 Estrellas">4 Estrellas</option>
+                    <option value="5 Estrellas">5 Estrellas</option>
                   </Select>
                 </Box>
                 
-                {/* Amenities */}
+                {/* Facilities */}
                 <Box>
                   <Text fontWeight="medium" mb={2}>
-                    Amenities
+                    Instalaciones
                   </Text>
                   <Stack spacing={2}>
                     <Checkbox 
-                      value="pool" 
-                      onChange={handleAmenityChange}
-                      isChecked={filters.amenities.includes('pool')}
+                      value="Recepción 24h" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Recepción 24h')}
                     >
-                      Swimming Pool
+                      Recepción 24h
                     </Checkbox>
                     <Checkbox 
-                      value="spa" 
-                      onChange={handleAmenityChange}
-                      isChecked={filters.amenities.includes('spa')}
+                      value="Terraza" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Terraza')}
                     >
-                      Spa & Wellness
+                      Terraza
                     </Checkbox>
                     <Checkbox 
-                      value="gym" 
-                      onChange={handleAmenityChange}
-                      isChecked={filters.amenities.includes('gym')}
+                      value="Acceso para Discapacitados" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Acceso para Discapacitados')}
                     >
-                      Fitness Center
-                    </Checkbox>
-                    <Checkbox 
-                      value="restaurant" 
-                      onChange={handleAmenityChange}
-                      isChecked={filters.amenities.includes('restaurant')}
-                    >
-                      Restaurant
-                    </Checkbox>
-                    <Checkbox 
-                      value="wifi" 
-                      onChange={handleAmenityChange}
-                      isChecked={filters.amenities.includes('wifi')}
-                    >
-                      Free WiFi
+                      Acceso para Discapacitados
                     </Checkbox>
                   </Stack>
                 </Box>
@@ -248,13 +246,13 @@ function Hotels() {
                   onClick={applyFilters} 
                   w="full"
                 >
-                  Apply Filters
+                  Aplicar Filtros
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={resetFilters}
                 >
-                  Reset
+                  Restablecer
                 </Button>
               </HStack>
             </Box>
@@ -268,18 +266,18 @@ function Hotels() {
               mb={6}
             >
               <Text color="gray.600">
-                {filteredHotels.length} hotels found
+                {filteredHotels.length} hoteles encontrados
               </Text>
               
               <Select 
                 maxW="200px" 
-                placeholder="Sort by" 
+                placeholder="Ordenar por" 
                 size="sm"
               >
-                <option value="priceAsc">Price: Low to High</option>
-                <option value="priceDesc">Price: High to Low</option>
-                <option value="ratingDesc">Highest Rated</option>
-                <option value="popular">Most Popular</option>
+                <option value="priceAsc">Precio: Menor a Mayor</option>
+                <option value="priceDesc">Precio: Mayor a Menor</option>
+                <option value="ratingDesc">Mejor Calificación</option>
+                <option value="popular">Más Populares</option>
               </Select>
             </Flex>
             
@@ -291,10 +289,10 @@ function Hotels() {
                 borderRadius="md"
               >
                 <Text fontSize="lg" fontWeight="medium">
-                  No hotels found matching your criteria.
+                  No se encontraron hoteles que coincidan con tus criterios.
                 </Text>
                 <Text color="gray.600" mt={2}>
-                  Try adjusting your filters for more results.
+                  Intenta ajustar tus filtros para obtener más resultados.
                 </Text>
               </Box>
             ) : (
@@ -303,7 +301,7 @@ function Hotels() {
                 spacing={6}
               >
                 {filteredHotels.map(hotel => (
-                  <HotelCard key={hotel.id} hotel={hotel} />
+                  <HotelCard key={hotel.uid} hotel={hotel} />
                 ))}
               </SimpleGrid>
             )}

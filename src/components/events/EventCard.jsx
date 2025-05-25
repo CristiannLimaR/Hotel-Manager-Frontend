@@ -97,7 +97,7 @@ function EventCard({ event }) {
           
           <Flex align="center">
             <Icon as={FiUsers} color="gray.500" mr={2} />
-            <Text fontSize="sm">Up to {capacity} guests</Text>
+            <Text fontSize="sm">Hasta {capacity} invitados</Text>
           </Flex>
           
           <Flex align="center">
@@ -108,7 +108,7 @@ function EventCard({ event }) {
         
         <Box mb={4}>
           <Text fontWeight="medium" mb={2}>
-            Package Includes:
+            El Paquete Incluye:
           </Text>
           <VStack align="start" spacing={1}>
             {includes.slice(0, 3).map((item, index) => (
@@ -119,7 +119,7 @@ function EventCard({ event }) {
             ))}
             {includes.length > 3 && (
               <Text fontSize="sm" color="brand.500">
-                +{includes.length - 3} more inclusions
+                +{includes.length - 3} inclusiones más
               </Text>
             )}
           </VStack>
@@ -134,7 +134,7 @@ function EventCard({ event }) {
         >
           <Box>
             <Text fontSize="sm" color="gray.500">
-              Starting from
+              Desde
             </Text>
             <Text fontSize="xl" fontWeight="bold" color="brand.500">
               ${price.toLocaleString()}
@@ -147,7 +147,7 @@ function EventCard({ event }) {
             colorScheme="teal"
             size="sm"
           >
-            Learn More
+            Ver Más
           </Button>
         </Flex>
       </Box>

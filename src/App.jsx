@@ -12,7 +12,7 @@ import { publicRoutes, protectedRoutes, adminRoutes, managerRoutes } from "./rou
 
 export default function App() {
   useEffect(() => {
-    document.title = "QuickStay - Hotel Booking";
+    document.title = "QuickStay - Reserva de Hoteles";
   }, []);
 
   return (

@@ -17,16 +17,17 @@ import { Link as RouterLink } from 'react-router-dom'
 
 function HotelCard({ hotel }) {
   const {
-    id,
+    uid,
     name,
     location,
-    price,
-    rating,
-    image,
+    rangeOfPrices,
+    category,
+    images,
     rooms,
-    capacity,
     bestSeller
   } = hotel
+
+  const rating = parseInt(category)
   
   const cardBg = useColorModeValue('white', 'gray.800')
   const priceBg = useColorModeValue('gray.100', 'gray.700')
@@ -45,7 +46,7 @@ function HotelCard({ hotel }) {
     >
       <Box position="relative">
         <Image 
-          src={image} 
+          src={images[0]} 
           alt={name} 
           h="200px" 
           w="100%" 
@@ -105,36 +106,32 @@ function HotelCard({ hotel }) {
         </Flex>
         
         <HStack spacing={2} mb={3}>
-          <Flex align="center">
-            <Icon as={FiUser} color="gray.500" fontSize="sm" mr={1} />
-            <Text fontSize="xs" color="gray.500">{capacity} guests</Text>
-          </Flex>
-          <Text fontSize="xs" color="gray.500">{rooms} rooms</Text>
+          <Text fontSize="xs" color="gray.500">{rooms.length} habitaciones</Text>
         </HStack>
         
         <Flex justify="space-between" align="center" mt={3}>
           <Box>
             <Text fontSize="xs" color="gray.500">
-              Starting from
+              Desde
             </Text>
             <Flex align="baseline">
               <Text fontSize="xl" fontWeight="bold" color="brand.500">
-                ${price}
+                ${rangeOfPrices.min}
               </Text>
               <Text fontSize="sm" color="gray.500" ml={1}>
-                /night
+                /noche
               </Text>
             </Flex>
           </Box>
           
           <Button 
             as={RouterLink} 
-            to={`/hotels/${id}`}
+            to={`/hotels/${uid}`}
             size="sm" 
             colorScheme="teal" 
             variant="outline"
           >
-            Book Now
+            Reservar
           </Button>
         </Flex>
       </Box>

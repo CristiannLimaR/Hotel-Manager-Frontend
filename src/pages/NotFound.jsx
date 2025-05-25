@@ -20,22 +20,22 @@ function NotFound() {
           
           <Image 
             src="https://images.pexels.com/photos/1470502/pexels-photo-1470502.jpeg?auto=compress&cs=tinysrgb&w=600"
-            alt="Page Not Found" 
+            alt="Página No Encontrada" 
             w="300px" 
             borderRadius="md" 
             boxShadow="md"
           />
           
           <Heading as="h2" size="xl" mt={2}>
-            Page Not Found
+            Página No Encontrada
           </Heading>
           
           <Text fontSize="lg" maxW="500px" mx="auto" color="gray.600">
-            Oops! The page you're looking for seems to have checked out early.
+            ¡Ups! La página que buscas parece haberse ido temprano.
           </Text>
           
           <Text fontSize="lg" maxW="500px" mx="auto" color="gray.600">
-            Let's get you back to exploring our amazing hotel options.
+            Volvamos a explorar nuestras increíbles opciones de hoteles.
           </Text>
           
           <Button 
@@ -45,7 +45,7 @@ function NotFound() {
             size="lg" 
             mt={4}
           >
-            Return to Homepage
+            Volver al Inicio
           </Button>
         </VStack>
       </Container>

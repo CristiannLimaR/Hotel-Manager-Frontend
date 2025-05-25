@@ -66,6 +66,7 @@ import {
       defaultValues: {
         name: '',
         direction: '',
+        location: '',
         category: '',
         rangeOfPrices: {
           min: '',
@@ -88,6 +89,7 @@ import {
         reset({
           name: hotelData.name,
           direction: hotelData.direction,
+          location: hotelData.location || '',
           category: hotelData.category,
           rangeOfPrices: {
             min: hotelData.rangeOfPrices?.min || '',
@@ -139,6 +141,7 @@ import {
         // Datos básicos
         formData.append('name', data.name);
         formData.append('direction', data.direction);
+        formData.append('location', data.location);
         formData.append('category', data.category);
         formData.append('admin', selectedAdmin.id || selectedAdmin._id);
 
@@ -254,6 +257,29 @@ import {
               />
               <FormErrorMessage>
                 {errors.direction && errors.direction.message}
+              </FormErrorMessage>
+            </FormControl>
+          </GridItem>
+
+          <GridItem colSpan={2}>
+            <FormControl isRequired isInvalid={errors.location}>
+              <FormLabel>Ubicación</FormLabel>
+              <Input
+                {...register('location', {
+                  required: 'La ubicación del hotel es obligatoria',
+                  minLength: {
+                    value: 3,
+                    message: 'La ubicación debe tener al menos 3 caracteres',
+                  },
+                  maxLength: {
+                    value: 100,
+                    message: 'La ubicación no puede exceder los 100 caracteres',
+                  },
+                })}
+                placeholder="Ingrese la ubicación del hotel (ciudad, país)"
+              />
+              <FormErrorMessage>
+                {errors.location && errors.location.message}
               </FormErrorMessage>
             </FormControl>
           </GridItem>

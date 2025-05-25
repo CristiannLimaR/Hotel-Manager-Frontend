@@ -84,7 +84,7 @@ function OfferCard({ offer }) {
           mt={3}
         >
           <Text fontSize="sm" color="gray.500">
-            Expires {new Date(expireDate).toLocaleDateString()}
+            Expira {new Date(expireDate).toLocaleDateString()}
           </Text>
           
           <Button 
@@ -94,7 +94,7 @@ function OfferCard({ offer }) {
             _hover={{ bg: 'brand.50' }}
             size="sm"
           >
-            View Offers
+            Ver Ofertas
           </Button>
         </Flex>
       </Box>

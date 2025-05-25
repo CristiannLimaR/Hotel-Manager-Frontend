@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   HStack,
@@ -41,61 +41,27 @@ import {
   FiCalendar,
   FiTrash2,
 } from "react-icons/fi";
+import { useReservation } from "../../../shared/hooks/useReservation";
 
 const ReservationsContent = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
-  const [reservations, setReservations] = useState([
-    {
-      _id: "681acd9c6c0cd25574a8b252",
-      user: {
-        _id: "681998288bf0c4096097c2d5",
-        nombre: "Jorge",
-        email: "pep@gmail.com",
-        role: "ADMIN_ROLE",
-        estado: true,
-        createdAt: "2025-05-06T05:03:36.539Z"
-      },
-      room: {
-        type: "Deluxe",
-        capacity: 2,
-        price_per_night: 150.99,
-        availability: [],
-        hotel_id: "681aca0b6c38a92a345e2970",
-        available: true,
-        state: true,
-        createdAt: "2025-05-07T02:50:42.484Z",
-        updatedAt: "2025-05-07T02:50:42.484Z",
-        nonAvailability: [],
-        uid: "681aca826c38a92a345e2979"
-      },
-      checkInDate: "2025-12-15T00:00:00.000Z",
-      checkOutDate: "2025-12-20T00:00:00.000Z",
-      status: "active",
-      services: [
-        {
-          service: {
-            _id: "681abba93e12374568dde9fe",
-            name: "Masaje Premium",
-            description: "Masaje de 90 minutos con aceites esenciales",
-            price: 99.99,
-            category: "spa",
-            available: true,
-            createdAt: "2025-05-07T01:47:21.601Z",
-            updatedAt: "2025-05-07T01:48:36.952Z"
-          },
-          quantity: 2,
-          _id: "681acd9c6c0cd25574a8b253"
-        }
-      ],
-      createdAt: "2025-05-07T03:03:56.109Z",
-      updatedAt: "2025-05-07T03:03:56.109Z"
-    }
-  ]);
+  const [reservations, setReservations] = useState([]);
   const [filteredReservations, setFilteredReservations] = useState(reservations);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("Todas");
   const [sortBy, setSortBy] = useState("date-asc");
+  const { getReservations } = useReservation();
+
+  useEffect(() => {
+    const fetchReservations = async () => {
+      const reservations = await getReservations();
+      setReservations(reservations);
+      console.log(reservations);
+      setFilteredReservations(reservations);
+    };
+    fetchReservations();
+  }, []);
 
   const handleViewDetails = (reservation) => {
     setSelectedReservation(reservation);
@@ -227,7 +193,7 @@ const ReservationsContent = () => {
                   <VStack align="start" spacing={1}>
                     {reservation.services.map((service) => (
                       <Badge key={service._id} colorScheme="purple">
-                        {service.service.name} x{service.quantity}
+                        {service.service.name}
                       </Badge>
                     ))}
                   </VStack>

@@ -37,7 +37,7 @@ function Footer() {
               <Text fontSize="lg" fontWeight="bold" ml={2}>QuickStay</Text>
             </Flex>
             <Text fontSize="sm">
-              We provide luxury and extraordinary places to stay, from boutique hotels to luxury villas and private retreats.
+              Ofrecemos lugares lujosos y extraordinarios para hospedarse, desde hoteles boutique hasta villas de lujo y retiros privados.
             </Text>
             <HStack spacing={4}>
               <IconButton
@@ -76,21 +76,21 @@ function Footer() {
           </Stack>
           
           <Stack align="flex-start">
-            <ListHeader>Company</ListHeader>
-            <Link as={RouterLink} to="/about">About</Link>
-            <Link as={RouterLink} to="/careers">Careers</Link>
-            <Link as={RouterLink} to="/press">Press</Link>
+            <ListHeader>Empresa</ListHeader>
+            <Link as={RouterLink} to="/about">Acerca de</Link>
+            <Link as={RouterLink} to="/careers">Carreras</Link>
+            <Link as={RouterLink} to="/press">Prensa</Link>
             <Link as={RouterLink} to="/blog">Blog</Link>
-            <Link as={RouterLink} to="/partners">Partners</Link>
+            <Link as={RouterLink} to="/partners">Socios</Link>
           </Stack>
           
           <Stack align="flex-start">
-            <ListHeader>Support</ListHeader>
-            <Link as={RouterLink} to="/help-center">Help Center</Link>
-            <Link as={RouterLink} to="/safety">Safety Information</Link>
-            <Link as={RouterLink} to="/cancellation">Cancellation Options</Link>
-            <Link as={RouterLink} to="/covid">COVID-19 Response</Link>
-            <Link as={RouterLink} to="/accessibility">Accessibility</Link>
+            <ListHeader>Soporte</ListHeader>
+            <Link as={RouterLink} to="/help-center">Centro de Ayuda</Link>
+            <Link as={RouterLink} to="/safety">Información de Seguridad</Link>
+            <Link as={RouterLink} to="/cancellation">Opciones de Cancelación</Link>
+            <Link as={RouterLink} to="/covid">Respuesta COVID-19</Link>
+            <Link as={RouterLink} to="/accessibility">Accesibilidad</Link>
           </Stack>
           
           <Stack align="flex-start">
@@ -136,12 +136,12 @@ function Footer() {
           textAlign={{ base: 'center', md: 'left' }}
         >
           <Text fontSize="sm" color="gray.500">
-            © 2025 QuickStay. All rights reserved.
+            © 2025 QuickStay. Todos los derechos reservados.
           </Text>
           <HStack spacing={6} mt={{ base: 4, md: 0 }}>
-            <Link as={RouterLink} to="/privacy" fontSize="sm" color="gray.500">Privacy</Link>
-            <Link as={RouterLink} to="/terms" fontSize="sm" color="gray.500">Terms</Link>
-            <Link as={RouterLink} to="/sitemap" fontSize="sm" color="gray.500">Sitemap</Link>
+            <Link as={RouterLink} to="/privacy" fontSize="sm" color="gray.500">Privacidad</Link>
+            <Link as={RouterLink} to="/terms" fontSize="sm" color="gray.500">Términos</Link>
+            <Link as={RouterLink} to="/sitemap" fontSize="sm" color="gray.500">Mapa del Sitio</Link>
           </HStack>
         </Container>
       </Box>

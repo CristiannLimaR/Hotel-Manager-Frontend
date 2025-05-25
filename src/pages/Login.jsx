@@ -115,14 +115,14 @@ function Login() {
             
             <Box textAlign="center">
               <Text>
-                Don&apos;t have an account?{' '}
+                ¿No tienes una cuenta?{' '}
                 <Text 
                   as={RouterLink} 
                   to="/register" 
                   color="brand.500" 
                   fontWeight="medium"
                 >
-                  Sign Up
+                  Regístrate
                 </Text>
               </Text>
             </Box>
