@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+:root {
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* Override Chakra focus outline for accessibility but with more subtle styling */
+*:focus {
+  box-shadow: 0 0 0 2px rgba(49, 151, 149, 0.6) !important;
+}

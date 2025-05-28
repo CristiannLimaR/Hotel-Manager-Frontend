@@ -1,16 +1,55 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect } from "react";
+import { Routes, Route } from "react-router-dom";
+import { Box } from "@chakra-ui/react";
 
-function App() {
-  const [count, setCount] = useState(0)
+import Layout from "./components/layout/Layout";
+import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/routes/ProtectedRoute";
+import AdminRoute from "./components/routes/AdminRoute";
+import ManagerRoute from "./components/routes/ManagerRoute";
+
+import { publicRoutes, protectedRoutes, adminRoutes, managerRoutes } from "./routes/routesConfig.jsx";
+
+export default function App() {
+  useEffect(() => {
+    document.title = "QuickStay - Hotel Booking";
+  }, []);
 
   return (
-    <>
-      Frontend
-    </>
-  )
-}
+    <Box minH="100vh">
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          {publicRoutes.map(({ path, element }) => (
+            <Route key={path} path={path} element={element} />
+          ))}
 
-export default App
+          {protectedRoutes.map(({ path, element }) => (
+            <Route
+              key={path}
+              path={path}
+              element={<ProtectedRoute>{element}</ProtectedRoute>}
+            />
+          ))}
+
+          <Route path="*" element={<NotFound />} />
+        </Route>
+
+        {adminRoutes.map(({ path, element }) => (
+          <Route
+            key={path}
+            path={path}
+            element={<AdminRoute>{element}</AdminRoute>}
+          />
+        ))}
+
+        {managerRoutes.map(({ path, element }) => (
+          <Route
+            key={path}
+            path={path}
+            element={<ManagerRoute>{element}</ManagerRoute>}
+          />
+        ))}
+      </Routes>
+    </Box>
+  );
+}
