@@ -25,7 +25,7 @@ const RoomsChart = ({ occupied, available }) => {
 
   return (
     <Box>
-      <ResponsiveContainer>
+      <ResponsiveContainer height={300} width="100%">
         <PieChart>
           <Pie
             data={chartData}

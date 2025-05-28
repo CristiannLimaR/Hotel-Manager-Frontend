@@ -35,29 +35,33 @@ const ReportsContent = () => {
       </Box>
     );
   }
+  console.log("stats:", stats);
+  console.log("stats.monthlyStats:", stats.monthlyStats);
+  console.log("user.role:", user.role);
+  console.log("stats.hotelOccupancy:", stats.hotelOccupancy);
+  console.log("stats.monthlyStats:", stats.monthlyStats);
+  console.log("user:", user);
+
 
   return (
     <Box p={4} ml={{ base: 0, md: 60 }}>
       <Heading mb={6}>Reportes Avanzados</Heading>
-      <Flex justify="space-between" align="center" mb={6} wrap="wrap" gap={4}>
-        <Select value={timeRange} width="250px" maxW="200px" disabled={false}>
-          <option value="year">Último año</option>
-        </Select>
-      </Flex>
+      <Divider my={8} borderColor="gray.300" />
 
-      {user.role === "ADMIN_ROLE" && stats?.hotelOccupancy(
+
+      {user.role === "ADMIN_ROLE" && stats?.hotelOccupancy && (
         <Box my={6}>
           <BusyHotels data={stats.hotelOccupancy} />
         </Box>
       )}
 
-      {user.role === "MANAGER_ROLE" && stats?.hotelOccupancy && (
-        <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
+      {user?.role?.includes("MANAGER_ROLE") && stats?.monthlyStats && (
+        <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={6}>
           <MonthlyReservations data={stats.monthlyStats} />
-          <RoomsChart data={{
-            busyRooms: stats.roomsOccupied,
-            availableRooms: stats.roomsAvailable,
-          }} />
+          <RoomsChart
+            occupied={stats.roomsOccupied}
+            available={stats.roomsAvailable}
+          />
         </Grid>
       )}
 

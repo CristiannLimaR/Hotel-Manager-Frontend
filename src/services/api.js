@@ -1,6 +1,7 @@
 import axios from "axios";
 import useAuthStore from "../shared/stores/authStore";
 
+
 const apiClient = axios.create({
   baseURL: "http://127.0.0.1:3000/hotelManager/v1",
   timeout: 5000,
@@ -146,9 +147,14 @@ export const getOccupancyStats = async () => {
 };
 
 // MANAGERS
-export const getMonthStats = async (hotelId) => {
+export const getMonthStats = async () => {
   try {
-    const response = await apiClient.get(`/hotels/month-stats/${hotelId}`);
+    const { token } = useAuthStore.getState();
+    const response = await apiClient.get(`/hotels/month-stats`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
     return response.data;
   } catch (e) {
     return {
@@ -158,11 +164,14 @@ export const getMonthStats = async (hotelId) => {
   }
 };
 
-export const getBusyAvailableRooms = async (hotelId) => {
+export const getBusyAvailableRooms = async () => {
   try {
-    const response = await apiClient.get(
-      `/hotels/busy-available-rooms/${hotelId}`
-    );
+    const { token } = useAuthStore.getState();
+    const response = await apiClient.get(`/hotels/busy-available-rooms`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
     return response.data
   } catch (e) {
     return {
@@ -186,6 +195,7 @@ export const getTotalReservations = async () => {
 export const getHotelByManager = async () => {
   try {
     const response = await axios.get('/hotels/manager')
+    return response.data
   } catch (e) {
     return {
       error: true,

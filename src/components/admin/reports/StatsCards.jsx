@@ -38,16 +38,19 @@ const StatsCards = ({ stats, role }) => {
         </CardBody>
       </Card>
 
-      <Card>
-        <CardBody>
-          <Text fontSize="sm" color={textColor}>
-            Reservas Totales
-          </Text>
-          <Text fontSize="2xl" fontWeight="bold" color={valueColor}>
-            {stats.totalBookings ?? "0"}
-          </Text>
-        </CardBody>
-      </Card>
+      {role ===
+        "ADMIN_ROLE" &&(
+          <Card>
+            <CardBody>
+              <Text fontSize="sm" color={textColor}>
+                Reservas Totales
+              </Text>
+              <Text fontSize="2xl" fontWeight="bold" color={valueColor}>
+                {stats.totalBookings ?? "0"}
+              </Text>
+            </CardBody>
+          </Card>
+        )}
 
       <Card>
         <CardBody>

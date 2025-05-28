@@ -30,8 +30,8 @@ const useStats = () => {
         response = transformAdminData(occupancyData);
       } else if (user.role === "MANAGER_ROLE") {
         const [monthStats, roomsStats] = await Promise.all([
-          getMonthStats(user.hotelId),
-          getBusyAvailableRooms(user.hotelId),
+          getMonthStats(),
+          getBusyAvailableRooms(),
         ]);
         response = transformManagerData(monthStats, roomsStats);
       }
