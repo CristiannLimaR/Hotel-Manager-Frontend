@@ -43,6 +43,7 @@ const EventsContent = () => {
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("Todos los Eventos");
+  const [typeFilter, setTypeFilter] = useState("");
   const [sortBy, setSortBy] = useState("date-asc");
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -69,11 +70,11 @@ const EventsContent = () => {
       capacity: event.capacity || "Capacidad no especificada",
       organizer: event.organizer || "Organizador no especificado"
     }));
-    filterEvents(searchTerm, statusFilter, sortBy, preparedEvents);
-  }, [events]);
+    filterEvents(searchTerm, statusFilter, typeFilter, sortBy, preparedEvents);
+  }, [events, searchTerm, statusFilter, typeFilter, sortBy]);
 
   // Function to apply filters and sorting
-  const filterEvents = (search, status, sort, currentEvents) => {
+  const filterEvents = (search, status, type, sort, currentEvents) => {
     let tempFiltered = [...currentEvents];
 
     if (search) {
@@ -89,6 +90,10 @@ const EventsContent = () => {
 
     if (status !== "Todos los Eventos") {
       tempFiltered = tempFiltered.filter((event) => event.status === status);
+    }
+
+    if (type) {
+      tempFiltered = tempFiltered.filter((event) => event.tipo_evento === type);
     }
 
     tempFiltered.sort((a, b) => {
@@ -112,17 +117,18 @@ const EventsContent = () => {
   // Handlers for search, filter, and sort in EventsHeader
   const handleSearch = (value) => {
     setSearchTerm(value);
-    filterEvents(value, statusFilter, sortBy, events.map(e => ({ ...e, status: e.estado ? "Activo" : "Inactivo" })));
   };
 
   const handleStatusFilter = (status) => {
     setStatusFilter(status);
-    filterEvents(searchTerm, status, sortBy, events.map(e => ({ ...e, status: e.estado ? "Activo" : "Inactivo" })));
+  };
+
+  const handleTypeFilter = (type) => {
+    setTypeFilter(type);
   };
 
   const handleSort = (value) => {
     setSortBy(value);
-    filterEvents(searchTerm, statusFilter, value, events.map(e => ({ ...e, status: e.estado ? "Activo" : "Inactivo" })));
   };
 
   // Form handling
@@ -281,6 +287,8 @@ const EventsContent = () => {
         handleSearch={handleSearch}
         statusFilter={statusFilter}
         handleStatusFilter={handleStatusFilter}
+        typeFilter={typeFilter}
+        handleTypeFilter={handleTypeFilter}
         sortBy={sortBy}
         handleSort={handleSort}
         onAddEvent={openAddEventModal}

@@ -33,12 +33,10 @@ const EventForm = ({ onSuccess, eventData = null, isAdmin = false }) => {
   const [hotels, setHotels] = useState([]);
   const { getHotels } = useHotel();
 
-    
   const {
     register,
     handleSubmit,
     formState: { errors },
-    reset,
     setValue
   } = useForm({
     defaultValues: eventData || {
@@ -68,7 +66,7 @@ const EventForm = ({ onSuccess, eventData = null, isAdmin = false }) => {
         setValue(key, formattedData[key]);
       });
     }
-  }, []);
+  }, [eventData, setValue]);
 
   const fetchHotels = useCallback(async () => {
     try {
@@ -121,7 +119,7 @@ const EventForm = ({ onSuccess, eventData = null, isAdmin = false }) => {
         recursos_asignados: data.assignedResources,
         servicios_adicionales: data.additionalServices,
         tipo_evento: data.type,
-        hotel_id: data.hotel
+        hotel_id: isAdmin ? eventData?.hotel : data.hotel
       };
       
       if (onSuccess) {

@@ -11,6 +11,9 @@ import {
   ModalHeader,
   ModalCloseButton,
   ModalBody,
+  Select,
+  FormControl,
+  FormLabel,
 } from "@chakra-ui/react";
 import { FiEye, FiEdit, FiTrash2 } from "react-icons/fi";
 import PropTypes from "prop-types";
@@ -22,19 +25,36 @@ const EventCard = ({ event, onEdit, onDelete, onDetails }) => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [formData, setFormData] = useState(null);
+  const [selectedType, setSelectedType] = useState("");
+
+  const eventTypes = [
+    { value: "Wedding", label: "Boda" },
+    { value: "Conference", label: "Conferencia" },
+    { value: "Birthday", label: "Cumpleaños" },
+    { value: "Gala", label: "Gala" },
+    { value: "Corporate", label: "Corporativo" },
+    { value: "Graduation", label: "Graduación" },
+    { value: "Anniversary", label: "Aniversario" },
+  ];
 
   const getTypeColorScheme = (type) => {
     switch (type) {
-      case "Conferencia":
+      case "Conference":
         return "blue";
-      case "Boda":
+      case "Wedding":
         return "purple";
-      case "Cena":
+      case "Birthday":
         return "green";
-      case "Reunión":
+      case "Gala":
         return "orange";
-      default:
+      case "Corporate":
         return "teal";
+      case "Graduation":
+        return "pink";
+      case "Anniversary":
+        return "yellow";
+      default:
+        return "gray";
     }
   };
 
@@ -72,6 +92,15 @@ const EventCard = ({ event, onEdit, onDelete, onDetails }) => {
     setIsAlertOpen(false);
   };
 
+  const handleTypeChange = (e) => {
+    setSelectedType(e.target.value);
+  };
+
+  // Si hay un tipo seleccionado y no coincide con el tipo del evento, no mostrar la tarjeta
+  if (selectedType && selectedType !== event.tipo_evento) {
+    return null;
+  }
+
   return (
     <>
       <Box
@@ -89,7 +118,7 @@ const EventCard = ({ event, onEdit, onDelete, onDetails }) => {
             {event.nombre_evento}
           </Text>
           <Badge colorScheme={getTypeColorScheme(event.tipo_evento)} px={3} py={1} borderRadius="full">
-            {event.tipo_evento || "N/A"}
+            {eventTypes.find(type => type.value === event.tipo_evento)?.label || event.tipo_evento}
           </Badge>
         </HStack>
 

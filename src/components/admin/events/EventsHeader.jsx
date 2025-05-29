@@ -22,7 +22,20 @@ const EventsHeader = ({
   sortBy,
   handleSort,
   onAddEvent,
+  typeFilter,
+  handleTypeFilter,
 }) => {
+  const eventTypes = [
+    { value: "", label: "Todos los tipos" },
+    { value: "Wedding", label: "Boda" },
+    { value: "Conference", label: "Conferencia" },
+    { value: "Birthday", label: "Cumpleaños" },
+    { value: "Gala", label: "Gala" },
+    { value: "Corporate", label: "Corporativo" },
+    { value: "Graduation", label: "Graduación" },
+    { value: "Anniversary", label: "Aniversario" },
+  ];
+
   return (
     <HStack justify="space-between" mb={6}>
       <HStack>
@@ -45,20 +58,26 @@ const EventsHeader = ({
             <MenuItem onClick={() => handleStatusFilter("Todos los Eventos")}>
               Todos los Eventos
             </MenuItem>
-            <MenuItem onClick={() => handleStatusFilter("Programado")}>
-              Programados
+            <MenuItem onClick={() => handleStatusFilter("Activo")}>
+              Activos
             </MenuItem>
-            <MenuItem onClick={() => handleStatusFilter("En Preparación")}>
-              En Preparación
-            </MenuItem>
-            <MenuItem onClick={() => handleStatusFilter("Completado")}>
-              Completados
-            </MenuItem>
-            <MenuItem onClick={() => handleStatusFilter("Cancelado")}>
-              Cancelados
+            <MenuItem onClick={() => handleStatusFilter("Inactivo")}>
+              Inactivos
             </MenuItem>
           </MenuList>
         </Menu>
+        <Select
+          placeholder="Tipo de evento"
+          w="180px"
+          value={typeFilter}
+          onChange={(e) => handleTypeFilter(e.target.value)}
+        >
+          {eventTypes.map((type) => (
+            <option key={type.value} value={type.value}>
+              {type.label}
+            </option>
+          ))}
+        </Select>
         <Select
           placeholder="Ordenar por"
           w="180px"
