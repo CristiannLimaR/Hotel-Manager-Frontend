@@ -155,6 +155,7 @@ function Booking() {
         room: roomId,
         checkInDate: bookingData.checkInDate.toISOString(),
         checkOutDate: bookingData.checkOutDate.toISOString(),
+        guests: bookingData.guests,
         services: bookingData.services
       });
       navigate('/my-bookings');

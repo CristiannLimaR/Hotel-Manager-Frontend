@@ -18,18 +18,14 @@ import TestimonialCard from '../components/testimonials/TestimonialCard'
 import { testimonials } from '../data/testimonials'
 import { useState, useEffect } from 'react'
 import useHotel from '../shared/hooks/useHotel'
+import { useSearch } from '../shared/context/SearchContext'
 
 function Home() {
   const heroImageHeight = useBreakpointValue({ base: '500px', md: '600px', lg: '650px' })
   const heroTextWidth = useBreakpointValue({ base: '100%', md: '80%', lg: '60%' })
   const { getHotels } = useHotel()
+  const { searchParams } = useSearch()
   const [hotels, setHotels] = useState([])
-  const [searchParams, setSearchParams] = useState({
-    destination: '',
-    checkIn: '',
-    checkOut: '',
-    guests: '2'
-  })
 
   useEffect(() => {
     const fetchHotels = async () => {
@@ -113,7 +109,7 @@ function Home() {
             mt={4}
             maxW={{ base: '100%', lg: '90%' }}
           >
-            <SearchBar initialValues={searchParams} />
+            <SearchBar />
           </Box>
         </Container>
       </Box>

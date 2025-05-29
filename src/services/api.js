@@ -340,3 +340,76 @@ export const deleteService = async (id) => {
     };
   }
 };
+
+export const getHotelByManager = async () => {
+  try {
+    const response = await apiClient.get("/hotels/hotel-by-manager");
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};
+
+export const getRoomsByHotel = async (hotelId) => {
+  try {
+    const response = await apiClient.get(`/hotels/${hotelId}/rooms`);
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};
+
+export const createRoom = async (data) => {
+  try {
+    console.log(data)
+    const response = await apiClient.post("/rooms", data);
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};
+
+export const updateRoom = async (uid, data) => {
+  try {
+    const response = await apiClient.put(`/rooms/${uid}`, data);
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};
+
+export const toggleRoomState = async (uid, data) => {
+  try {
+    const response = await apiClient.patch(`/rooms/${uid}`, data);
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};
+
+export const deleteRoom = async (uid) => {
+  try {
+    const response = await apiClient.patch(`/rooms/${uid}`);
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};

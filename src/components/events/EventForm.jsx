@@ -24,8 +24,9 @@ import {
 import { useForm } from 'react-hook-form';
 import { useState, useEffect, useCallback } from 'react';
 import useHotel from '../../shared/hooks/useHotel';
+import PropTypes from 'prop-types';
 
-const EventForm = ({ onSuccess, eventData = null }) => {
+const EventForm = ({ onSuccess, eventData = null, isAdmin = false }) => {
   const isEdit = Boolean(eventData);
   const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -37,7 +38,8 @@ const EventForm = ({ onSuccess, eventData = null }) => {
     register,
     handleSubmit,
     formState: { errors },
-    reset
+    reset,
+    setValue
   } = useForm({
     defaultValues: eventData || {
       name: '',
@@ -52,15 +54,28 @@ const EventForm = ({ onSuccess, eventData = null }) => {
 
   useEffect(() => {
     if (eventData) {
-      reset(eventData);
+      const formattedData = {
+        name: eventData.name || '',
+        description: eventData.description || '',
+        date: eventData.date || '',
+        hotel: eventData.hotel || '',
+        assignedResources: eventData.assignedResources || [],
+        additionalServices: eventData.additionalServices || [],
+        type: eventData.type || ''
+      };
+      
+      Object.keys(formattedData).forEach(key => {
+        setValue(key, formattedData[key]);
+      });
     }
-  }, [eventData, reset]);
+  }, []);
 
   const fetchHotels = useCallback(async () => {
     try {
       const hotelsData = await getHotels();
       setHotels(hotelsData);
-    } catch (error) {
+    } catch (err) {
+      console.error('Error al cargar hoteles:', err);
       toast({
         title: 'Error',
         description: 'No se pudieron cargar los hoteles',
@@ -105,13 +120,15 @@ const EventForm = ({ onSuccess, eventData = null }) => {
         fecha: data.date,
         recursos_asignados: data.assignedResources,
         servicios_adicionales: data.additionalServices,
-        tipo_evento: data.type
+        tipo_evento: data.type,
+        hotel_id: data.hotel
       };
       
       if (onSuccess) {
-        await onSuccess(formattedData, data.hotel);
+        await onSuccess(formattedData);
       }
-    } catch (error) {
+    } catch (err) {
+      console.error('Error al guardar evento:', err);
       toast({
         title: 'Error',
         description: 'No se pudo guardar el evento',
@@ -213,26 +230,28 @@ const EventForm = ({ onSuccess, eventData = null }) => {
           </FormControl>
         </GridItem>
 
-        <GridItem colSpan={2}>
-          <FormControl isRequired isInvalid={errors.hotel}>
-            <FormLabel>Hotel</FormLabel>
-            <Select
-              {...register('hotel', {
-                required: 'Debe seleccionar un hotel',
-              })}
-            >
-              <option value="">Seleccione un hotel</option>
-              {hotels.map(hotel => (
-                <option key={hotel.uid} value={hotel.uid}>
-                  {hotel.name}
-                </option>
-              ))}
-            </Select>
-            <FormErrorMessage>
-              {errors.hotel && errors.hotel.message}
-            </FormErrorMessage>
-          </FormControl>
-        </GridItem>
+        {!isAdmin && (
+          <GridItem colSpan={2}>
+            <FormControl isRequired isInvalid={errors.hotel}>
+              <FormLabel>Hotel</FormLabel>
+              <Select
+                {...register('hotel', {
+                  required: 'Debe seleccionar un hotel',
+                })}
+              >
+                <option value="">Seleccione un hotel</option>
+                {hotels.map(hotel => (
+                  <option key={hotel.uid} value={hotel.uid}>
+                    {hotel.name}
+                  </option>
+                ))}
+              </Select>
+              <FormErrorMessage>
+                {errors.hotel && errors.hotel.message}
+              </FormErrorMessage>
+            </FormControl>
+          </GridItem>
+        )}
 
         <GridItem colSpan={2}>
           <FormControl isInvalid={errors.assignedResources}>
@@ -290,6 +309,18 @@ const EventForm = ({ onSuccess, eventData = null }) => {
   );
 };
 
-
+EventForm.propTypes = {
+  onSuccess: PropTypes.func.isRequired,
+  eventData: PropTypes.shape({
+    name: PropTypes.string,
+    description: PropTypes.string,
+    date: PropTypes.string,
+    hotel: PropTypes.string,
+    assignedResources: PropTypes.arrayOf(PropTypes.string),
+    additionalServices: PropTypes.arrayOf(PropTypes.string),
+    type: PropTypes.string
+  }),
+  isAdmin: PropTypes.bool
+};
 
 export default EventForm; 
