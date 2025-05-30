@@ -413,3 +413,66 @@ export const deleteRoom = async (uid) => {
     };
   }
 };
+
+// GRAPHICS
+export const getOccupancyStats = async () => {
+  try {
+    const response = await apiClient.get("/hotels/occupancy-stats");
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};
+
+// MANAGERS
+export const getMonthStats = async () => {
+  try {
+    const { token } = useAuthStore.getState();
+    const response = await apiClient.get(`/hotels/month-stats`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};
+
+export const getBusyAvailableRooms = async () => {
+  try {
+    const { token } = useAuthStore.getState();
+    const response = await apiClient.get(`/hotels/busy-available-rooms`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return response.data
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};
+
+export const getTotalReservations = async () => {
+  try {
+    const response = await apiClient.get('/reservations/busyRooms')
+    return response.data
+  } catch (e) {
+    return {
+      error: true,
+      e
+    }
+  }
+}
+
+
+

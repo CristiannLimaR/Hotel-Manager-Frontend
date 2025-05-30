@@ -26,9 +26,9 @@ export const protectedRoutes = [
 ];
 
 export const adminRoutes = [
-  { path: '/admin/platform', element: <PlatformDashboard /> },
+  { path: '/admin/platform', element: <PlatformDashboard /> }
 ];
 
 export const managerRoutes = [
-  { path: '/admin/hotel', element: <HotelDashboard /> },
+  { path: '/admin/hotel', element: <HotelDashboard/> },
 ]; 

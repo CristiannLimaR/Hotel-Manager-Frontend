@@ -59,12 +59,6 @@ const SidebarPlatform = ({ activeNavItem, setActiveNavItem }) => {
           Reportes
         </NavItem>
         <Divider my={2} />
-        <NavItem icon={Settings} id="Settings" activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem}>
-          Configuración
-        </NavItem>
-        <NavItem icon={LogOutIcon} id="Logout" activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem}>
-          Cerrar Sesión
-        </NavItem>
       </VStack>
     </Box>
   );

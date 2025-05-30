@@ -11,6 +11,7 @@ import {
   FiLogOut,
 } from "react-icons/fi";
 import { Link as RouterLink } from "react-router-dom";
+import { BarChart } from "recharts";
 
 const NavItem = ({ icon, children, id, activeNavItem, setActiveNavItem, as, to }) => {
   const bg = useColorModeValue("white", "gray.800");
@@ -78,8 +79,8 @@ const Sidebar = ({ activeNavItem, setActiveNavItem }) => {
         <NavItem icon={FiList} id="Services" activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem}>
           Services
         </NavItem>
-        <NavItem icon={FiBarChart2} id="Analytics" activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem}>
-          Analytics
+        <NavItem icon={BarChart} id="Reportes" activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem}>
+          Reportes
         </NavItem>
       </VStack>
     </Box>
