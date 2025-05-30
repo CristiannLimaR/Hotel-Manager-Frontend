@@ -31,7 +31,7 @@ const ConfirmationModal = ({
         <Text>
           ¿Estás seguro de que deseas **eliminar** la habitación con ID:{" "}
           <Text as="span" fontWeight="bold">
-            {roomInQuestion}
+            {roomInQuestion.uid}
           </Text>
           ? Esta acción es irreversible.
         </Text>
@@ -46,7 +46,7 @@ const ConfirmationModal = ({
           </Text>{" "}
           la habitación con ID:{" "}
           <Text as="span" fontWeight="bold">
-            {roomInQuestion}
+            {roomInQuestion.uid}
           </Text>
           ?
         </Text>

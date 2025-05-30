@@ -99,12 +99,30 @@ const ReservationsContent = () => {
 
   useEffect(() => {
     const fetchReservations = async () => {
-      const reservations = await getReservations();
-      setReservations(reservations);
-      setFilteredReservations(reservations);
+      try {
+        const reservations = await getReservations();
+        // Filtrar las reservaciones por el hotel actual
+        const hotelReservations = reservations.filter(reservation => 
+          reservation.hotel === hotel?.uid
+        );
+        setReservations(hotelReservations);
+        setFilteredReservations(hotelReservations);
+      } catch (error) {
+        console.error('Error al cargar las reservaciones:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar las reservaciones",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
     };
-    fetchReservations();
-  }, []);
+    
+    if (hotel?.uid) {
+      fetchReservations();
+    }
+  }, [hotel]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -362,29 +380,34 @@ const ReservationsContent = () => {
     setNewReservationData(prev => ({
       ...prev,
       checkInDate: start,
-      checkOutDate: end
+      checkOutDate: end,
+      roomId: '' // Resetear la habitación seleccionada cuando cambian las fechas
     }));
     
     // Filtrar habitaciones disponibles para las fechas seleccionadas
     if (hotel?.rooms) {
-      console.log('Habitaciones del hotel:', hotel.rooms);
       const available = hotel.rooms.filter(room => {
         // Verificar si la habitación está disponible para las fechas seleccionadas
         const isAvailable = !room.reservations?.some(reservation => {
+          if (reservation.status === 'cancelled') return false; // Ignorar reservas canceladas
+          
           const resStart = new Date(reservation.checkInDate);
           const resEnd = new Date(reservation.checkOutDate);
+          
+          // Verificar si hay solapamiento de fechas
           return (
-            (start >= resStart && start < resEnd) ||
-            (end > resStart && end <= resEnd) ||
-            (start <= resStart && end >= resEnd)
+            (start >= resStart && start < resEnd) || // El check-in está dentro de una reserva existente
+            (end > resStart && end <= resEnd) || // El check-out está dentro de una reserva existente
+            (start <= resStart && end >= resEnd) // La nueva reserva engloba una reserva existente
           );
         });
-        return isAvailable;
+        
+        // Verificar también la capacidad de la habitación
+        return isAvailable && room.available;
       });
-      console.log('Habitaciones disponibles:', available);
+      
       setAvailableRooms(available);
     } else {
-      console.log('No hay habitaciones disponibles en el hotel');
       setAvailableRooms([]);
     }
   };
@@ -925,8 +948,8 @@ const ReservationsContent = () => {
                       ))}
                     </Select>
                   ) : (
-                    <Text color="gray.500">
-                      No hay habitaciones disponibles para las fechas seleccionadas
+                    <Text color="red.500">
+                      No hay habitaciones disponibles para las fechas seleccionadas. Por favor, selecciona otras fechas.
                     </Text>
                   )}
                 </FormControl>

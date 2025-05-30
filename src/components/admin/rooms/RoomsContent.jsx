@@ -63,7 +63,7 @@ const RoomsContent = () => {
   const applyFilters = useCallback(() => {
     let filtered = [...rooms];
 
-    // Aplicar filtro de búsqueda
+    
     if (searchTerm) {
       filtered = filtered.filter(room => 
         room.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -143,7 +143,6 @@ const RoomsContent = () => {
     try {
       let response;
       if (uid) {
-        // Editar habitación existente
         response = await editRoom(uid, roomData);
         if (response.error) {
           toast({
@@ -163,7 +162,6 @@ const RoomsContent = () => {
           isClosable: true,
         });
       } else {
-        // Crear nueva habitación
         response = await createNewRoom(roomData);
         if (response.error) {
           toast({
@@ -184,7 +182,6 @@ const RoomsContent = () => {
         });
       }
 
-      // Recargar la lista de habitaciones
       await fetchRooms();
       return true;
     } catch (error) {
@@ -208,7 +205,9 @@ const RoomsContent = () => {
   const handleConfirmAction = async () => {
     try {
       if (actionType === "toggleState") {
-        const response = await toggleRoom(roomInQuestion);
+        console.log("Habitación a modificar:", roomInQuestion);
+        const response = await toggleRoom(roomInQuestion.uid, !roomInQuestion.available);
+        console.log("Respuesta del servidor:", response);
         if (response.error) {
           toast({
             title: "Error",
@@ -218,13 +217,6 @@ const RoomsContent = () => {
             isClosable: true,
           });
         } else {
-          toast({
-            title: "Estado actualizado",
-            description: "El estado de la habitación se ha actualizado correctamente.",
-            status: "success",
-            duration: 3000,
-            isClosable: true,
-          });
           await fetchRooms();
         }
       }
@@ -337,8 +329,8 @@ const RoomsContent = () => {
               room={room}
               onViewDetails={handleViewDetails}
               onEdit={handleOpenEditModal}
-              onToggleState={(uid) => {
-                setRoomInQuestion(uid);
+              onToggleState={(room) => {
+                setRoomInQuestion(room);
                 setActionType("toggleState");
                 onOpenConfirm();
               }}
@@ -366,7 +358,7 @@ const RoomsContent = () => {
         actionType={actionType}
         roomInQuestion={roomInQuestion}
         onConfirm={handleConfirmAction}
-        roomState={rooms.find(r => r.uid === roomInQuestion)?.state}
+        roomState={rooms.find(r => r.uid === roomInQuestion?.uid)?.state}
       />
     </Box>
   );

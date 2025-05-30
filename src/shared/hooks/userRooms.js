@@ -51,9 +51,9 @@ const useRooms = () => {
     }
   };
 
-  const createNewRoom = async (data) => {
+  const createNewRoom = async (formData) => {
     setLoading(true);
-    const response = await createRoom(data);
+    const response = await createRoom(formData);
     if (response.error) {
       toast({
         title: "Error",
@@ -62,21 +62,22 @@ const useRooms = () => {
         duration: 3000,
         isClosable: true,
       });
+    } else {
+      toast({
+        title: "Habitación creada",
+        description: "La habitación se ha creado correctamente",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
     }
-    toast({
-      title: "Habitación creada",
-      description: "La habitación se ha creado correctamente",
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
     setLoading(false);
     return response;
   };
 
-  const editRoom = async (id, data) => {
+  const editRoom = async (id, formData) => {
     setLoading(true);
-    const response = await updateRoom(id, data);
+    const response = await updateRoom(id, formData);
     if (response.error) {
       toast({
         title: "Error",
@@ -85,21 +86,22 @@ const useRooms = () => {
         duration: 3000,
         isClosable: true,
       });
+    } else {
+      toast({
+        title: "Habitación editada",
+        description: "La habitación se ha editado correctamente",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
     }
-    toast({
-      title: "Habitación editada",
-      description: "La habitación se ha editado correctamente",
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
     setLoading(false);
     return response;
   };
 
-  const toggleRoom = async (id) => {
+  const toggleRoom = async (id,available) => {
     setLoading(true);
-    const response = await toggleRoomState(id);
+    const response = await toggleRoomState(id, available);
     if (response.error) {
       toast({
         title: "Error",
@@ -108,14 +110,15 @@ const useRooms = () => {
         duration: 3000,
         isClosable: true,
       });
+    } else {
+      toast({
+        title: "Estado actualizado",
+        description: "El estado de la habitación se ha actualizado correctamente",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
     }
-    toast({
-      title: "Estado actualizado",
-      description: "El estado de la habitación se ha actualizado correctamente",
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
     setLoading(false);
     return response;
   };

@@ -20,10 +20,12 @@ import {
   Divider,
   List,
   ListItem,
-  ListIcon
+  ListIcon,
+  IconButton,
+  ModalHeader
 } from '@chakra-ui/react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { FiMapPin, FiUsers, FiDollarSign, FiCheck } from 'react-icons/fi'
+import { FiMapPin, FiUsers, FiDollarSign, FiCheck, FiImage } from 'react-icons/fi'
 import useHotel from '../shared/hooks/useHotel'
 import SearchBar from '../components/common/SearchBar'
 import { useSearch } from '../shared/context/SearchContext'
@@ -35,6 +37,8 @@ function HotelDetail() {
   const { searchParams } = useSearch()
   const [hotel, setHotel] = useState(null)
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const { isOpen: isRoomGalleryOpen, onOpen: onRoomGalleryOpen, onClose: onRoomGalleryClose } = useDisclosure()
+  const [selectedRoom, setSelectedRoom] = useState(null)
   const [showAllImages, setShowAllImages] = useState(false)
   const [filteredRooms, setFilteredRooms] = useState([])
   const bgColor = useColorModeValue('white', 'gray.800')
@@ -106,6 +110,11 @@ function HotelDetail() {
   
   const handleRoomSelect = (room) => {
     navigate(`/booking/${hotel.uid}/${room._id}`)
+  }
+
+  const handleRoomGalleryOpen = (room) => {
+    setSelectedRoom(room)
+    onRoomGalleryOpen()
   }
   
   return (
@@ -283,13 +292,22 @@ function HotelDetail() {
                           <Text>Precio por noche: ${room.price_per_night}</Text>
                         </Flex>
                       </Stack>
-                      <Button 
-                        colorScheme="teal" 
-                        onClick={() => handleRoomSelect(room)}
-                        w="full"
-                      >
-                        Reservar
-                      </Button>
+                      <Flex gap={2}>
+                        <Button 
+                          colorScheme="teal" 
+                          onClick={() => handleRoomSelect(room)}
+                          flex="1"
+                        >
+                          Reservar
+                        </Button>
+                        <IconButton
+                          aria-label="Ver galería"
+                          icon={<FiImage />}
+                          colorScheme="blue"
+                          variant="outline"
+                          onClick={() => handleRoomGalleryOpen(room)}
+                        />
+                      </Flex>
                     </Box>
                   ))}
                 </Stack>
@@ -351,6 +369,34 @@ function HotelDetail() {
                   <Image 
                     src={image} 
                     alt={`${hotel.name} - Imagen ${index + 1}`}
+                    w="full"
+                    h="300px"
+                    objectFit="cover"
+                  />
+                </Box>
+              ))}
+            </SimpleGrid>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal de galería de habitación */}
+      <Modal isOpen={isRoomGalleryOpen} onClose={onRoomGalleryClose} size="6xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Galería de Imágenes - Habitación {selectedRoom?.type}</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody p={0}>
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={4} p={4}>
+              {selectedRoom?.images?.map((image, index) => (
+                <Box 
+                  key={index} 
+                  borderRadius="lg" 
+                  overflow="hidden"
+                >
+                  <Image 
+                    src={image} 
+                    alt={`Habitación ${selectedRoom?.type} - Imagen ${index + 1}`}
                     w="full"
                     h="300px"
                     objectFit="cover"

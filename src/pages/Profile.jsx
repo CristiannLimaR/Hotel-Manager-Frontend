@@ -31,6 +31,7 @@ import { useForm } from 'react-hook-form'
 import { FiEdit2, FiLock } from 'react-icons/fi'
 import useAuthStore from '../shared/stores/authStore'
 import useLogin  from '../shared/hooks/useLogin'
+import useUsers from '../shared/hooks/useUsers'
 
 function Profile() {
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: handleEditClose } = useDisclosure()
@@ -39,7 +40,7 @@ function Profile() {
   const user = useAuthStore((state) => state.user)
   console.log(user)
   const { logout } = useLogin()
-  const updateUser = useAuthStore((state) => state.updateUser)
+  const { updateUser, updatePassword } = useUsers()
 
   const bgColor = useColorModeValue("gray.50", "gray.800")
   const cardBg = useColorModeValue("white", "gray.700")
@@ -71,7 +72,7 @@ function Profile() {
   const onSubmitEdit = async (data) => {
     try {
       
-      updateUser(data)
+      await updateUser(user.id, data)
       toast({
         title: 'Perfil actualizado',
         description: 'Tus datos han sido actualizados correctamente',
@@ -92,16 +93,9 @@ function Profile() {
     }
   }
 
-  const onSubmitPassword = async () => {
+  const onSubmitPassword = async (data) => {
     try {
-      // Aquí iría la llamada a la API para cambiar la contraseña
-      toast({
-        title: 'Contraseña actualizada',
-        description: 'Tu contraseña ha sido actualizada correctamente',
-        status: 'success',
-        duration: 3000,
-        isClosable: true
-      })
+      await updatePassword(user.id, { password: data.password, currentPassword: data.currentPassword })
       resetPasswordForm()
       handlePasswordClose()
       logout()

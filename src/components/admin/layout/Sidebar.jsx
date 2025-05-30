@@ -11,7 +11,7 @@ import {
   FiLogOut,
 } from "react-icons/fi";
 import { Link as RouterLink } from "react-router-dom";
-import { BarChart } from "recharts";
+import { UserIcon, BarChart } from "lucide-react";
 
 const NavItem = ({ icon, children, id, activeNavItem, setActiveNavItem, as, to }) => {
   const bg = useColorModeValue("white", "gray.800");
@@ -81,6 +81,9 @@ const Sidebar = ({ activeNavItem, setActiveNavItem }) => {
         </NavItem>
         <NavItem icon={BarChart} id="Reportes" activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem}>
           Reportes
+        </NavItem>
+        <NavItem icon={UserIcon} id="Usuarios" activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem}>
+          Usuarios
         </NavItem>
       </VStack>
     </Box>

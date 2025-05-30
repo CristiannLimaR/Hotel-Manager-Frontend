@@ -122,35 +122,6 @@ const DashboardContent = () => {
           </Box>
         </Card>
         
-        <Card bg={cardBg} p={4}>
-          <Heading size="md" mb={4}>Tendencia de Ocupación</Heading>
-          <Box height="300px">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={stats?.monthlyStats || []}
-                margin={{
-                  top: 20,
-                  right: 30,
-                  left: 20,
-                  bottom: 5,
-                }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="occupancyPercentage"
-                  name="Ocupación Mensual (%)"
-                  stroke="#38B2AC"
-                  activeDot={{ r: 8 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </Box>
-        </Card>
       </Grid>
     </Box>
   );

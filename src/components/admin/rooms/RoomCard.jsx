@@ -9,10 +9,20 @@ import {
   Divider,
   Button,
   IconButton,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  useDisclosure,
 } from "@chakra-ui/react";
-import { FiEdit } from "react-icons/fi";
+import { FiEdit, FiImage } from "react-icons/fi";
+import HotelGallery from "../platform/HotelGallery";
 
 const RoomCard = ({ room, onEdit, onViewDetails, onToggleState }) => {
+  const { isOpen: isGalleryOpen, onOpen: onGalleryOpen, onClose: onGalleryClose } = useDisclosure();
+
   return (
     <Box
       borderWidth="1px"
@@ -72,6 +82,14 @@ const RoomCard = ({ room, onEdit, onViewDetails, onToggleState }) => {
             Ver Detalles
           </Button>
           <IconButton
+            aria-label="Ver galería"
+            icon={<FiImage />}
+            size="sm"
+            colorScheme="blue"
+            variant="outline"
+            onClick={onGalleryOpen}
+          />
+          <IconButton
             aria-label="Editar habitación"
             icon={<FiEdit />}
             size="sm"
@@ -87,10 +105,21 @@ const RoomCard = ({ room, onEdit, onViewDetails, onToggleState }) => {
             size="sm"
             colorScheme={room.available ? "green" : "orange"}
             variant="outline"
-            onClick={() => onToggleState(room.uid)}
+            onClick={() => onToggleState(room)}
           />
         </HStack>
       </Box>
+
+      <Modal isOpen={isGalleryOpen} onClose={onGalleryClose} size="6xl">
+        <ModalOverlay />
+        <ModalContent maxW="1200px" my="auto">
+          <ModalHeader>Galería de Imágenes - Habitación {room.type}</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <HotelGallery images={room.images || []} />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };

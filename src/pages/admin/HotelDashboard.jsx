@@ -9,7 +9,7 @@ import EventsContent from "../../components/admin/events/EventsContent";
 import InvoicesContent from "../../components/admin/invoices/InvoicesContent";
 import ServicesContent from "../../components/admin/services/ServicesContent";
 import ReportsContent from "../../components/admin/platform/ReportsContent";
-
+import UsersContent from "../../components/admin/users/UsersContent";
 const HotelDashboard = () => {
   const [activeNavItem, setActiveNavItem] = useState("Dashboard");
 
@@ -35,6 +35,8 @@ const HotelDashboard = () => {
         return <DashboardContent />;
       case "Reportes":
         return <ReportsContent/>
+      case "Usuarios":
+        return <UsersContent/>
       default:
         return <DashboardContent />;
     }

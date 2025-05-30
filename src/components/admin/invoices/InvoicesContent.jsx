@@ -77,6 +77,7 @@ const InvoicesContent = () => {
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      console.log(selectedInvoice);
       pdf.save(`Factura-Hotel-${selectedInvoice._id.slice(-8)}.pdf`);
       
       onClose();

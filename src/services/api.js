@@ -173,6 +173,42 @@ export const deleteUser = async(id) => {
     }
   }
 }
+
+export const enableRoom = async(id) => {
+  try {
+    const response = await apiClient.put(`/rooms/${id}/enable`)
+    return response.data
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    }
+  }
+}
+
+export const getActiveUsersByHotel = async(hotelId) => {
+  try {
+    const response = await apiClient.get(`/reservations/active-users/${hotelId}`)
+    return response.data
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    }
+  }
+}
+
+export const updatePassword = async (data) => {
+  try {
+    const response = await apiClient.patch('/password', data)
+    return response.data
+  } catch (e) {
+    return {
+      error: true,
+      e
+    }
+  }
+}
 export const saveReservation = async (data) => {
   try {
     const response = await apiClient.post("/reservations", data);
@@ -365,34 +401,47 @@ export const getRoomsByHotel = async (hotelId) => {
   }
 };
 
-export const createRoom = async (data) => {
+export const createRoom = async (formData) => {
   try {
-    console.log(data)
-    const response = await apiClient.post("/rooms", data);
-    return response.data;
+    const response = await apiClient.post('/rooms', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return {
+      success: true,
+      data: response.data
+    };
   } catch (e) {
     return {
-      error: true,
-      e,
+      success: false,
+      error: e.response?.data?.msg || 'Error al crear la habitación'
     };
   }
 };
 
-export const updateRoom = async (uid, data) => {
+export const updateRoom = async (uid, formData) => {
   try {
-    const response = await apiClient.put(`/rooms/${uid}`, data);
-    return response.data;
+    const response = await apiClient.put(`/rooms/${uid}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return {
+      success: true,
+      data: response.data
+    };
   } catch (e) {
     return {
-      error: true,
-      e,
+      success: false,
+      error: e.response?.data?.msg || 'Error al actualizar la habitación'
     };
   }
 };
 
 export const toggleRoomState = async (uid, data) => {
   try {
-    const response = await apiClient.patch(`/rooms/${uid}`, data);
+    const response = await apiClient.patch(`/rooms/${uid}`, {available: data});
     return response.data;
   } catch (e) {
     return {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { 
   Box, 
   Container, 
@@ -43,7 +43,7 @@ import {
   FiEdit, 
   FiXCircle,
   FiList,
-  FiUsers
+  FiDownload
 } from 'react-icons/fi'
 import { Link as RouterLink } from 'react-router-dom'
 import { useReservation } from '../shared/hooks/useReservation'
@@ -53,6 +53,9 @@ import es from 'date-fns/locale/es'
 import dayjs from 'dayjs'
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
+import InvoiceTemplate from '../components/admin/invoices/InvoiceTemplate'
 
 dayjs.extend(isSameOrAfter)
 dayjs.extend(isSameOrBefore)
@@ -61,8 +64,10 @@ function BookingCard({ booking }) {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { isOpen: isServicesOpen, onOpen: onServicesOpen, onClose: onServicesClose } = useDisclosure()
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure()
+  const { isOpen: isInvoiceOpen, onOpen: onInvoiceOpen, onClose: onInvoiceClose } = useDisclosure()
   const { editReservation, deleteReservation } = useReservation()
   const toast = useToast()
+  const componentRef = useRef()
   
   const [editData, setEditData] = useState({
     checkInDate: new Date(booking.checkInDate),
@@ -179,7 +184,90 @@ function BookingCard({ booking }) {
     deleteReservation(booking._id)
     onClose()
   }
-  
+
+  const generatePDF = async () => {
+    if (!componentRef.current) return;
+
+    try {
+      // Transformar los datos de la reserva al formato esperado por InvoiceTemplate
+      const invoiceData = {
+        _id: booking._id,
+        Date: new Date().toISOString(),
+        reservation: {
+          user: {
+            nombre: booking.user?.nombre || 'Usuario',
+            email: booking.user?.email || 'email@ejemplo.com',
+            _id: booking.user?._id || booking._id
+          },
+          hotel: {
+            name: booking.hotel?.name || 'Hotel',
+            direction: booking.hotel?.direction || 'Dirección del hotel',
+            location: booking.hotel?.location || 'Ubicación del hotel',
+            category: booking.hotel?.category || 'Categoría'
+          },
+          room: {
+            type: booking.room?.type || 'Tipo de habitación',
+            capacity: booking.room?.capacity || 2
+          },
+          checkInDate: booking.checkInDate,
+          checkOutDate: booking.checkOutDate,
+          status: booking.status
+        },
+        nights: Math.round((new Date(booking.checkOutDate) - new Date(booking.checkInDate)) / (1000 * 60 * 60 * 24)),
+        roomPricePerNight: booking.room?.price_per_night || 0,
+        roomTotal: (booking.room?.price_per_night || 0) * Math.round((new Date(booking.checkOutDate) - new Date(booking.checkInDate)) / (1000 * 60 * 60 * 24)),
+        services: booking.services?.map(service => ({
+          name: service.service?.name || 'Servicio',
+          price: service.service?.price || 0,
+          total: (service.service?.price || 0) * (service.quantity || 1)
+        })) || [],
+        total_pagar: (booking.room?.price_per_night || 0) * Math.round((new Date(booking.checkOutDate) - new Date(booking.checkInDate)) / (1000 * 60 * 60 * 24)) + 
+          (booking.services?.reduce((total, service) => total + ((service.service?.price || 0) * (service.quantity || 1)), 0) || 0)
+      };
+
+      const canvas = await html2canvas(componentRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`Factura-Reserva-${booking._id.slice(-8)}.pdf`);
+      
+      onInvoiceClose();
+    } catch (error) {
+      console.error('Error al generar el PDF:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo generar el PDF de la factura",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const calculateTotal = () => {
+    const roomTotal = (booking.room?.price_per_night || 0) * nights;
+    const servicesTotal = booking.services?.reduce((total, service) => {
+      const servicePrice = service.service?.price || 0;
+      const quantity = service.quantity || 1;
+      return total + (servicePrice * quantity);
+    }, 0) || 0;
+    return roomTotal + servicesTotal;
+  };
+
   return (
     <Box 
       borderWidth="1px" 
@@ -290,9 +378,19 @@ function BookingCard({ booking }) {
             align={{ base: 'flex-start', md: 'center' }}
             flexDirection={{ base: 'column', md: 'row' }}
           >
-            <Text fontWeight="bold">
-              Total: ${booking.room.price_per_night * nights}
-            </Text>
+            <VStack align="start" spacing={1}>
+              <Text fontWeight="bold">
+                Total: ${calculateTotal()}
+              </Text>
+              <Text fontSize="sm" color="gray.500">
+                Habitación: ${booking.room?.price_per_night * nights}
+                {booking.services?.length > 0 && ` + Servicios: $${booking.services?.reduce((total, service) => {
+                  const servicePrice = service.service?.price || 0;
+                  const quantity = service.quantity || 1;
+                  return total + (servicePrice * quantity);
+                }, 0)}`}
+              </Text>
+            </VStack>
             
             <HStack spacing={3} mt={{ base: 3, md: 0 }}>
               <Button
@@ -326,6 +424,17 @@ function BookingCard({ booking }) {
                     Cancelar
                   </Button>
                 </>
+              )}
+              {booking.status === 'completed' && (
+                <Button
+                  size="sm"
+                  leftIcon={<FiDownload />}
+                  variant="outline"
+                  colorScheme="blue"
+                  onClick={onInvoiceOpen}
+                >
+                  Descargar Factura
+                </Button>
               )}
             </HStack>
           </Flex>
@@ -522,6 +631,59 @@ function BookingCard({ booking }) {
               loadingText="Cancelando"
             >
               Sí, Cancelar
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal de Factura */}
+      <Modal isOpen={isInvoiceOpen} onClose={onInvoiceClose} size="full">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Vista Previa de Factura</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            {(() => {
+              const invoiceData = {
+                _id: booking._id,
+                Date: new Date().toISOString(),
+                reservation: {
+                  user: {
+                    nombre: booking.user?.nombre || 'Usuario',
+                    email: booking.user?.email || 'email@ejemplo.com',
+                    _id: booking.user?._id || booking._id
+                  },
+                  hotel: {
+                    name: booking.hotel?.name || 'Hotel',
+                    direction: booking.hotel?.direction || 'Dirección del hotel',
+                    location: booking.hotel?.location || 'Ubicación del hotel',
+                    category: booking.hotel?.category || 'Categoría'
+                  },
+                  room: {
+                    type: booking.room?.type || 'Tipo de habitación',
+                    capacity: booking.room?.capacity || 2
+                  },
+                  checkInDate: booking.checkInDate,
+                  checkOutDate: booking.checkOutDate,
+                  status: booking.status
+                },
+                nights: Math.round((new Date(booking.checkOutDate) - new Date(booking.checkInDate)) / (1000 * 60 * 60 * 24)),
+                roomPricePerNight: booking.room?.price_per_night || 0,
+                roomTotal: (booking.room?.price_per_night || 0) * Math.round((new Date(booking.checkOutDate) - new Date(booking.checkInDate)) / (1000 * 60 * 60 * 24)),
+                services: booking.services?.map(service => ({
+                  name: service.service?.name || 'Servicio',
+                  price: service.service?.price || 0,
+                  total: (service.service?.price || 0) * (service.quantity || 1)
+                })) || [],
+                total_pagar: (booking.room?.price_per_night || 0) * Math.round((new Date(booking.checkOutDate) - new Date(booking.checkInDate)) / (1000 * 60 * 60 * 24)) + 
+                  (booking.services?.reduce((total, service) => total + ((service.service?.price || 0) * (service.quantity || 1)), 0) || 0)
+              };
+              return <InvoiceTemplate ref={componentRef} data={invoiceData} />;
+            })()}
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="blue" onClick={generatePDF}>
+              Descargar PDF
             </Button>
           </ModalFooter>
         </ModalContent>

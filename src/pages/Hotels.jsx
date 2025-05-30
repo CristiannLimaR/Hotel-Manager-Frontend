@@ -274,13 +274,97 @@ function Hotels() {
                   <Text fontWeight="medium" mb={2}>
                     Instalaciones
                   </Text>
-                  <Stack spacing={2}>
+                  <Stack spacing={2} maxH="300px" overflowY="auto">
+                    <Checkbox 
+                      value="Wifi" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Wifi')}
+                    >
+                      Wifi
+                    </Checkbox>
+                    <Checkbox 
+                      value="Piscina" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Piscina')}
+                    >
+                      Piscina
+                    </Checkbox>
+                    <Checkbox 
+                      value="Estacionamiento" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Estacionamiento')}
+                    >
+                      Estacionamiento
+                    </Checkbox>
+                    <Checkbox 
+                      value="Parking Privado" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Parking Privado')}
+                    >
+                      Parking Privado
+                    </Checkbox>
                     <Checkbox 
                       value="Recepción 24h" 
                       onChange={handleFacilityChange}
                       isChecked={filters.facilities.includes('Recepción 24h')}
                     >
                       Recepción 24h
+                    </Checkbox>
+                    <Checkbox 
+                      value="Calefacción" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Calefacción')}
+                    >
+                      Calefacción
+                    </Checkbox>
+                    <Checkbox 
+                      value="Aire Acondicionado" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Aire Acondicionado')}
+                    >
+                      Aire Acondicionado
+                    </Checkbox>
+                    <Checkbox 
+                      value="Habitaciones Privadas" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Habitaciones Privadas')}
+                    >
+                      Habitaciones Privadas
+                    </Checkbox>
+                    <Checkbox 
+                      value="Servicios Premium" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Servicios Premium')}
+                    >
+                      Servicios Premium
+                    </Checkbox>
+                    <Checkbox 
+                      value="Gimnasio" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Gimnasio')}
+                    >
+                      Gimnasio
+                    </Checkbox>
+                    <Checkbox 
+                      value="Spa" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Spa')}
+                    >
+                      Spa
+                    </Checkbox>
+                    <Checkbox 
+                      value="Restaurante" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Restaurante')}
+                    >
+                      Restaurante
+                    </Checkbox>
+                    <Checkbox 
+                      value="Bar" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Bar')}
+                    >
+                      Bar
                     </Checkbox>
                     <Checkbox 
                       value="Terraza" 
@@ -290,11 +374,74 @@ function Hotels() {
                       Terraza
                     </Checkbox>
                     <Checkbox 
+                      value="Jardín" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Jardín')}
+                    >
+                      Jardín
+                    </Checkbox>
+                    <Checkbox 
+                      value="Salas de Reuniones" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Salas de Reuniones')}
+                    >
+                      Salas de Reuniones
+                    </Checkbox>
+                    <Checkbox 
+                      value="Servicio de Limpieza" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Servicio de Limpieza')}
+                    >
+                      Servicio de Limpieza
+                    </Checkbox>
+                    <Checkbox 
+                      value="Servicio de Lavandería" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Servicio de Lavandería')}
+                    >
+                      Servicio de Lavandería
+                    </Checkbox>
+                    <Checkbox 
+                      value="Servicio de Concierge" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Servicio de Concierge')}
+                    >
+                      Servicio de Concierge
+                    </Checkbox>
+                    <Checkbox 
+                      value="Servicio de Traslado" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Servicio de Traslado')}
+                    >
+                      Servicio de Traslado
+                    </Checkbox>
+                    <Checkbox 
+                      value="Caja Fuerte" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Caja Fuerte')}
+                    >
+                      Caja Fuerte
+                    </Checkbox>
+                    <Checkbox 
+                      value="Ascensor" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Ascensor')}
+                    >
+                      Ascensor
+                    </Checkbox>
+                    <Checkbox 
                       value="Acceso para Discapacitados" 
                       onChange={handleFacilityChange}
                       isChecked={filters.facilities.includes('Acceso para Discapacitados')}
                     >
                       Acceso para Discapacitados
+                    </Checkbox>
+                    <Checkbox 
+                      value="Mascotas Permitidas" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Mascotas Permitidas')}
+                    >
+                      Mascotas Permitidas
                     </Checkbox>
                   </Stack>
                 </Box>
