@@ -17,14 +17,14 @@ import {
   RangeSliderThumb,
   useColorModeValue
 } from '@chakra-ui/react'
-import { useLocation } from 'react-router-dom'
 import HotelCard from '../components/hotels/HotelCard'
 import SearchBar from '../components/common/SearchBar'
 import useHotel from '../shared/hooks/useHotel'
+import { useSearch } from '../shared/context/SearchContext'
 
 function Hotels() {
-  const location = useLocation()
   const { getHotels } = useHotel()
+  const { searchParams } = useSearch()
   const [hotels, setHotels] = useState([])
   const [filteredHotels, setFilteredHotels] = useState([])
   const [filters, setFilters] = useState({
@@ -32,13 +32,8 @@ function Hotels() {
     category: '',
     facilities: []
   })
-  const [searchParams, setSearchParams] = useState({
-    destination: '',
-    checkIn: '',
-    checkOut: '',
-    guests: '2'
-  })
   const [sortBy, setSortBy] = useState('')
+  const filterBg = useColorModeValue('white', 'gray.800')
 
   useEffect(() => {
     const fetchHotels = async () => {
@@ -49,51 +44,53 @@ function Hotels() {
     fetchHotels()
   }, [])
   
-  // Initialize from search params if available
+  // Aplicar filtros cuando cambien los parámetros de búsqueda
   useEffect(() => {
-    if (location.state) {
-      const { destination, checkIn, checkOut, guests } = location.state
-      setSearchParams({ destination, checkIn, checkOut, guests })
-      
-      // Aplicar filtros iniciales
-      let filtered = [...hotels]
-      
-      // Filter by destination
-      if (destination) {
-        filtered = filtered.filter(hotel => 
-          hotel.location?.toLowerCase().includes(destination.toLowerCase()) ||
-          hotel.direction?.toLowerCase().includes(destination.toLowerCase())
-        )
-      }
+    let filtered = [...hotels]
+    
+    // Filter by destination
+    if (searchParams.destination) {
+      filtered = filtered.filter(hotel => 
+        hotel.location?.toLowerCase().includes(searchParams.destination.toLowerCase()) ||
+        hotel.direction?.toLowerCase().includes(searchParams.destination.toLowerCase())
+      )
+    }
 
-      // Filter by room availability
-      if (checkIn && checkOut) {
-        const checkInDate = new Date(checkIn)
-        const checkOutDate = new Date(checkOut)
-        
-        filtered = filtered.filter(hotel => {
-          return hotel.rooms.some(room => {
-            if (!room.nonAvailability || room.nonAvailability.length === 0) {
-              return true
-            }
+    // Filter by room availability
+    if (searchParams.checkIn && searchParams.checkOut) {
+      const checkInDate = new Date(searchParams.checkIn)
+      const checkOutDate = new Date(searchParams.checkOut)
+      const guests = parseInt(searchParams.guests || '2')
+      
+      filtered = filtered.filter(hotel => {
+        return hotel.rooms.some(room => {
+          // Verificar capacidad
+          if (room.capacity < guests) {
+            return false
+          }
 
-            return !room.nonAvailability.some(period => {
-              const periodStart = new Date(period.start)
-              const periodEnd = new Date(period.end)
-              
-              return (
-                (checkInDate >= periodStart && checkInDate < periodEnd) ||
-                (checkOutDate > periodStart && checkOutDate <= periodEnd) ||
-                (checkInDate <= periodStart && checkOutDate >= periodEnd)
-              )
-            })
+          // Si la habitación no tiene períodos de no disponibilidad, está disponible
+          if (!room.nonAvailability || room.nonAvailability.length === 0) {
+            return true
+          }
+
+          // Verificar si las fechas seleccionadas se superponen con algún período de no disponibilidad
+          return !room.nonAvailability.some(period => {
+            const periodStart = new Date(period.start)
+            const periodEnd = new Date(period.end)
+            
+            return (
+              (checkInDate >= periodStart && checkInDate < periodEnd) ||
+              (checkOutDate > periodStart && checkOutDate <= periodEnd) ||
+              (checkInDate <= periodStart && checkOutDate >= periodEnd)
+            )
           })
         })
-      }
-      
-      setFilteredHotels(filtered)
+      })
     }
-  }, [location, hotels])
+    
+    setFilteredHotels(filtered)
+  }, [hotels, searchParams])
   
   const handlePriceChange = (values) => {
     setFilters({
@@ -126,7 +123,7 @@ function Hotels() {
   }
   
   const applyFilters = () => {
-    let results = [...hotels]
+    let results = [...filteredHotels]
     
     // Filter by price range
     results = results.filter(hotel => 
@@ -146,43 +143,6 @@ function Hotels() {
       )
     }
     
-    // Filter by destination from search params
-    if (searchParams.destination) {
-      results = results.filter(hotel => 
-        hotel.location?.toLowerCase().includes(searchParams.destination.toLowerCase()) ||
-        hotel.direction?.toLowerCase().includes(searchParams.destination.toLowerCase())
-      )
-    }
-
-    // Filter by room availability for selected dates
-    if (searchParams.checkIn && searchParams.checkOut) {
-      const checkIn = new Date(searchParams.checkIn)
-      const checkOut = new Date(searchParams.checkOut)
-      
-      results = results.filter(hotel => {
-        // Verificar si el hotel tiene habitaciones disponibles
-        return hotel.rooms.some(room => {
-          // Si la habitación no tiene períodos de no disponibilidad, está disponible
-          if (!room.nonAvailability || room.nonAvailability.length === 0) {
-            return true
-          }
-
-          // Verificar si las fechas seleccionadas se superponen con algún período de no disponibilidad
-          return !room.nonAvailability.some(period => {
-            const periodStart = new Date(period.start)
-            const periodEnd = new Date(period.end)
-            
-            // Verificar si hay superposición de fechas
-            return (
-              (checkIn >= periodStart && checkIn < periodEnd) || // La fecha de entrada está dentro del período
-              (checkOut > periodStart && checkOut <= periodEnd) || // La fecha de salida está dentro del período
-              (checkIn <= periodStart && checkOut >= periodEnd) // El período está completamente dentro de las fechas seleccionadas
-            )
-          })
-        })
-      })
-    }
-    
     setFilteredHotels(results)
   }
   
@@ -192,16 +152,8 @@ function Hotels() {
       category: '',
       facilities: []
     })
-    setSearchParams({
-      destination: '',
-      checkIn: '',
-      checkOut: '',
-      guests: '2'
-    })
     setFilteredHotels(hotels)
   }
-  
-  const filterBg = useColorModeValue('white', 'gray.800')
   
   const handleSortChange = (e) => {
     const value = e.target.value
@@ -247,7 +199,7 @@ function Hotels() {
             borderRadius="lg" 
             boxShadow="sm"
           >
-            <SearchBar initialValues={searchParams} />
+            <SearchBar />
           </Box>
         </Container>
       </Box>
@@ -322,13 +274,97 @@ function Hotels() {
                   <Text fontWeight="medium" mb={2}>
                     Instalaciones
                   </Text>
-                  <Stack spacing={2}>
+                  <Stack spacing={2} maxH="300px" overflowY="auto">
+                    <Checkbox 
+                      value="Wifi" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Wifi')}
+                    >
+                      Wifi
+                    </Checkbox>
+                    <Checkbox 
+                      value="Piscina" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Piscina')}
+                    >
+                      Piscina
+                    </Checkbox>
+                    <Checkbox 
+                      value="Estacionamiento" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Estacionamiento')}
+                    >
+                      Estacionamiento
+                    </Checkbox>
+                    <Checkbox 
+                      value="Parking Privado" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Parking Privado')}
+                    >
+                      Parking Privado
+                    </Checkbox>
                     <Checkbox 
                       value="Recepción 24h" 
                       onChange={handleFacilityChange}
                       isChecked={filters.facilities.includes('Recepción 24h')}
                     >
                       Recepción 24h
+                    </Checkbox>
+                    <Checkbox 
+                      value="Calefacción" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Calefacción')}
+                    >
+                      Calefacción
+                    </Checkbox>
+                    <Checkbox 
+                      value="Aire Acondicionado" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Aire Acondicionado')}
+                    >
+                      Aire Acondicionado
+                    </Checkbox>
+                    <Checkbox 
+                      value="Habitaciones Privadas" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Habitaciones Privadas')}
+                    >
+                      Habitaciones Privadas
+                    </Checkbox>
+                    <Checkbox 
+                      value="Servicios Premium" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Servicios Premium')}
+                    >
+                      Servicios Premium
+                    </Checkbox>
+                    <Checkbox 
+                      value="Gimnasio" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Gimnasio')}
+                    >
+                      Gimnasio
+                    </Checkbox>
+                    <Checkbox 
+                      value="Spa" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Spa')}
+                    >
+                      Spa
+                    </Checkbox>
+                    <Checkbox 
+                      value="Restaurante" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Restaurante')}
+                    >
+                      Restaurante
+                    </Checkbox>
+                    <Checkbox 
+                      value="Bar" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Bar')}
+                    >
+                      Bar
                     </Checkbox>
                     <Checkbox 
                       value="Terraza" 
@@ -338,11 +374,74 @@ function Hotels() {
                       Terraza
                     </Checkbox>
                     <Checkbox 
+                      value="Jardín" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Jardín')}
+                    >
+                      Jardín
+                    </Checkbox>
+                    <Checkbox 
+                      value="Salas de Reuniones" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Salas de Reuniones')}
+                    >
+                      Salas de Reuniones
+                    </Checkbox>
+                    <Checkbox 
+                      value="Servicio de Limpieza" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Servicio de Limpieza')}
+                    >
+                      Servicio de Limpieza
+                    </Checkbox>
+                    <Checkbox 
+                      value="Servicio de Lavandería" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Servicio de Lavandería')}
+                    >
+                      Servicio de Lavandería
+                    </Checkbox>
+                    <Checkbox 
+                      value="Servicio de Concierge" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Servicio de Concierge')}
+                    >
+                      Servicio de Concierge
+                    </Checkbox>
+                    <Checkbox 
+                      value="Servicio de Traslado" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Servicio de Traslado')}
+                    >
+                      Servicio de Traslado
+                    </Checkbox>
+                    <Checkbox 
+                      value="Caja Fuerte" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Caja Fuerte')}
+                    >
+                      Caja Fuerte
+                    </Checkbox>
+                    <Checkbox 
+                      value="Ascensor" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Ascensor')}
+                    >
+                      Ascensor
+                    </Checkbox>
+                    <Checkbox 
                       value="Acceso para Discapacitados" 
                       onChange={handleFacilityChange}
                       isChecked={filters.facilities.includes('Acceso para Discapacitados')}
                     >
                       Acceso para Discapacitados
+                    </Checkbox>
+                    <Checkbox 
+                      value="Mascotas Permitidas" 
+                      onChange={handleFacilityChange}
+                      isChecked={filters.facilities.includes('Mascotas Permitidas')}
+                    >
+                      Mascotas Permitidas
                     </Checkbox>
                   </Stack>
                 </Box>

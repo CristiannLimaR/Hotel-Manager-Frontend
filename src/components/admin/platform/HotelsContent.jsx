@@ -42,6 +42,7 @@ const HotelsContent = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedHotel, setSelectedHotel] = useState(null);
   const [hotels, setHotels] = useState([]);
+  const [formDataToEdit, setFormDataToEdit] = useState(null);
 
   const { getHotels, saveHotel, editHotel, deleteHotel, isLoading } = useHotel();
   console.log(hotels);
@@ -67,10 +68,9 @@ const HotelsContent = () => {
   };
 
   const handleEditSuccess = async (formData) => {
-      await editHotel(selectedHotel.uid, formData);
+      setFormDataToEdit(formData);
       onEditClose();
       onUpdateAlertOpen();
-      fetchHotels();
   };
 
   const handleViewGallery = (hotel) => {
@@ -91,6 +91,12 @@ const HotelsContent = () => {
   const confirmDelete = async () => {
       await deleteHotel(selectedHotel.uid);
       onDeleteAlertClose();
+      fetchHotels();
+  };
+
+  const confirmUpdate = async () => {
+      await editHotel(selectedHotel.uid, formDataToEdit);
+      onUpdateAlertClose();
       fetchHotels();
   };
 
@@ -265,10 +271,10 @@ const HotelsContent = () => {
         isOpen={isUpdateAlertOpen}
         onClose={onUpdateAlertClose}
         cancelRef={cancelRef}
-        onConfirm={onUpdateAlertClose}
-        title="Hotel Actualizado"
-        description="El hotel se ha actualizado correctamente."
-        confirmButtonText="Aceptar"
+        onConfirm={confirmUpdate}
+        title="Confirmar Actualización"
+        description="¿Estás seguro que deseas actualizar la información del hotel?"
+        confirmButtonText="Confirmar"
         confirmButtonColor="blue"
       />
     </Box>

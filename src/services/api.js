@@ -173,6 +173,42 @@ export const deleteUser = async(id) => {
     }
   }
 }
+
+export const enableRoom = async(id) => {
+  try {
+    const response = await apiClient.put(`/rooms/${id}/enable`)
+    return response.data
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    }
+  }
+}
+
+export const getActiveUsersByHotel = async(hotelId) => {
+  try {
+    const response = await apiClient.get(`/reservations/active-users/${hotelId}`)
+    return response.data
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    }
+  }
+}
+
+export const updatePassword = async (data) => {
+  try {
+    const response = await apiClient.patch('/password', data)
+    return response.data
+  } catch (e) {
+    return {
+      error: true,
+      e
+    }
+  }
+}
 export const saveReservation = async (data) => {
   try {
     const response = await apiClient.post("/reservations", data);
@@ -340,3 +376,173 @@ export const deleteService = async (id) => {
     };
   }
 };
+
+export const getHotelByManager = async () => {
+  try {
+    const response = await apiClient.get("/hotels/hotel-by-manager");
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};
+
+export const getRoomsByHotel = async (hotelId) => {
+  try {
+    const response = await apiClient.get(`/hotels/${hotelId}/rooms`);
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};
+
+export const createRoom = async (formData) => {
+  try {
+    const response = await apiClient.post('/rooms', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (e) {
+    return {
+      success: false,
+      error: e.response?.data?.msg || 'Error al crear la habitación'
+    };
+  }
+};
+
+export const updateRoom = async (uid, formData) => {
+  try {
+    const response = await apiClient.put(`/rooms/${uid}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (e) {
+    return {
+      success: false,
+      error: e.response?.data?.msg || 'Error al actualizar la habitación'
+    };
+  }
+};
+
+export const toggleRoomState = async (uid, data) => {
+  try {
+    const response = await apiClient.patch(`/rooms/${uid}`, {available: data});
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};
+
+export const deleteRoom = async (uid) => {
+  try {
+    const response = await apiClient.patch(`/rooms/${uid}`);
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};
+
+// GRAPHICS
+export const getOccupancyStats = async () => {
+  try {
+    const response = await apiClient.get("/hotels/occupancy-stats");
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};
+
+// MANAGERS
+export const getMonthStats = async () => {
+  try {
+    const { token } = useAuthStore.getState();
+    const response = await apiClient.get(`/hotels/month-stats`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};
+
+export const getBusyAvailableRooms = async () => {
+  try {
+    const { token } = useAuthStore.getState();
+    const response = await apiClient.get(`/hotels/busy-available-rooms`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return response.data
+  } catch (e) {
+    return {
+      error: true,
+      e,
+    };
+  }
+};
+
+export const getTotalReservations = async () => {
+  try {
+    const response = await apiClient.get('/reservations/busyRooms')
+    return response.data
+  } catch (e) {
+    return {
+      error: true,
+      e
+    }
+  }
+}
+
+export const getInvoices = async (hotelId) => {
+  try {
+    const response = await apiClient.get('/invoices', { params: { hotelId } })
+    return response.data
+  } catch (e) {
+    return {
+      error: true,
+      e
+    }
+  }
+}
+
+export const createInvoice = async (data) => {
+  try {
+    const response = await apiClient.post('/invoices', data)
+    return response.data
+  } catch (e) {
+    return {
+      error: true,
+      e
+    }
+  }
+}

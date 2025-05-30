@@ -20,20 +20,27 @@ import {
   Divider,
   List,
   ListItem,
-  ListIcon
+  ListIcon,
+  IconButton,
+  ModalHeader
 } from '@chakra-ui/react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { FiMapPin, FiUsers, FiDollarSign, FiCheck } from 'react-icons/fi'
+import { FiMapPin, FiUsers, FiDollarSign, FiCheck, FiImage } from 'react-icons/fi'
 import useHotel from '../shared/hooks/useHotel'
+import SearchBar from '../components/common/SearchBar'
+import { useSearch } from '../shared/context/SearchContext'
 
 function HotelDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { getHotelById  } = useHotel()
+  const { getHotelById } = useHotel()
+  const { searchParams } = useSearch()
   const [hotel, setHotel] = useState(null)
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const { isOpen: isRoomGalleryOpen, onOpen: onRoomGalleryOpen, onClose: onRoomGalleryClose } = useDisclosure()
+  const [selectedRoom, setSelectedRoom] = useState(null)
   const [showAllImages, setShowAllImages] = useState(false)
-  console.log(id)
+  const [filteredRooms, setFilteredRooms] = useState([])
   const bgColor = useColorModeValue('white', 'gray.800')
   const borderColor = useColorModeValue('gray.200', 'gray.700')
   
@@ -48,6 +55,45 @@ function HotelDetail() {
     }
     fetchHotel()
   }, [id])
+
+  // Filtrar habitaciones cuando cambien los parámetros de búsqueda o el hotel
+  useEffect(() => {
+    if (hotel) {
+      if (searchParams.checkIn && searchParams.checkOut) {
+        const checkInDate = new Date(searchParams.checkIn)
+        const checkOutDate = new Date(searchParams.checkOut)
+        const guests = parseInt(searchParams.guests || '2')
+        
+        const availableRooms = hotel.rooms.filter(room => {
+          // Verificar capacidad
+          if (room.capacity < guests) {
+            return false
+          }
+          
+          // Verificar disponibilidad
+          if (!room.nonAvailability || room.nonAvailability.length === 0) {
+            return true
+          }
+          
+          // Verificar si las fechas seleccionadas se superponen con algún período de no disponibilidad
+          return !room.nonAvailability.some(period => {
+            const periodStart = new Date(period.start)
+            const periodEnd = new Date(period.end)
+            
+            return (
+              (checkInDate >= periodStart && checkInDate < periodEnd) ||
+              (checkOutDate > periodStart && checkOutDate <= periodEnd) ||
+              (checkInDate <= periodStart && checkOutDate >= periodEnd)
+            )
+          })
+        })
+        
+        setFilteredRooms(availableRooms)
+      } else {
+        setFilteredRooms(hotel.rooms)
+      }
+    }
+  }, [hotel, searchParams])
   
   if (!hotel) {
     return (
@@ -65,9 +111,28 @@ function HotelDetail() {
   const handleRoomSelect = (room) => {
     navigate(`/booking/${hotel.uid}/${room._id}`)
   }
+
+  const handleRoomGalleryOpen = (room) => {
+    setSelectedRoom(room)
+    onRoomGalleryOpen()
+  }
   
   return (
     <Box pt={20} pb={16}>
+      {/* Barra de búsqueda */}
+      <Box bg="gray.50" py={8} mb={8}>
+        <Container maxW="1200px">
+          <Box 
+            bg="white" 
+            p={5} 
+            borderRadius="lg" 
+            boxShadow="sm"
+          >
+            <SearchBar />
+          </Box>
+        </Container>
+      </Box>
+
       <Container maxW="1200px">
         {/* Hotel Header */}
         <Box mb={8}>
@@ -179,42 +244,74 @@ function HotelDetail() {
               <Heading as="h3" fontSize="xl" mb={4}>
                 Habitaciones Disponibles
               </Heading>
-              <Stack spacing={4}>
-                {hotel.rooms.map(room => (
-                  <Box 
-                    key={room._id}
-                    p={4}
-                    borderWidth="1px"
-                    borderRadius="md"
-                    borderColor={borderColor}
-                  >
-                    <Flex justify="space-between" align="center" mb={2}>
-                      <Heading as="h4" fontSize="lg">
-                        {room.type}
-                      </Heading>
-                      <Badge colorScheme="green">
-                        Disponible
-                      </Badge>
-                    </Flex>
-                    <Stack spacing={2} mb={4}>
-                      <Flex align="center" gap={2}>
-                        <FiUsers />
-                        <Text>Capacidad: {room.capacity} personas</Text>
-                      </Flex>
-                      <Flex align="center" gap={2}>
-                        <FiDollarSign />
-                        <Text>Precio por noche: ${room.price_per_night}</Text>
-                      </Flex>
-                    </Stack>
-                    <Button 
-                      colorScheme="teal" 
-                      onClick={() => handleRoomSelect(room)}
+              {!searchParams.checkIn || !searchParams.checkOut ? (
+                <Box textAlign="center" py={6}>
+                  <Text fontSize="lg" color="gray.600">
+                    Por favor, selecciona las fechas de entrada y salida para ver las habitaciones disponibles
+                  </Text>
+                </Box>
+              ) : filteredRooms.length === 0 ? (
+                <Box textAlign="center" py={6}>
+                  <Text fontSize="lg" color="gray.600">
+                    No hay habitaciones disponibles para las fechas seleccionadas
+                  </Text>
+                  <Text fontSize="sm" color="gray.500" mt={2}>
+                    {searchParams.guests > 1 
+                      ? `Para ${searchParams.guests} huéspedes del ${searchParams.checkIn} al ${searchParams.checkOut}`
+                      : `Para ${searchParams.guests} huésped del ${searchParams.checkIn} al ${searchParams.checkOut}`
+                    }
+                  </Text>
+                </Box>
+              ) : (
+                <Stack spacing={4}>
+                  {filteredRooms.map(room => (
+                    <Box 
+                      key={room._id}
+                      p={4}
+                      borderWidth="1px"
+                      borderRadius="md"
+                      borderColor={borderColor}
+                      _hover={{ borderColor: 'teal.500' }}
+                      transition="all 0.2s"
                     >
-                      Reservar
-                    </Button>
-                  </Box>
-                ))}
-              </Stack>
+                      <Flex justify="space-between" align="center" mb={2}>
+                        <Heading as="h4" fontSize="lg">
+                          {room.type}
+                        </Heading>
+                        <Badge colorScheme="green">
+                          Disponible
+                        </Badge>
+                      </Flex>
+                      <Stack spacing={2} mb={4}>
+                        <Flex align="center" gap={2}>
+                          <FiUsers />
+                          <Text>Capacidad: {room.capacity} {room.capacity === 1 ? 'persona' : 'personas'}</Text>
+                        </Flex>
+                        <Flex align="center" gap={2}>
+                          <FiDollarSign />
+                          <Text>Precio por noche: ${room.price_per_night}</Text>
+                        </Flex>
+                      </Stack>
+                      <Flex gap={2}>
+                        <Button 
+                          colorScheme="teal" 
+                          onClick={() => handleRoomSelect(room)}
+                          flex="1"
+                        >
+                          Reservar
+                        </Button>
+                        <IconButton
+                          aria-label="Ver galería"
+                          icon={<FiImage />}
+                          colorScheme="blue"
+                          variant="outline"
+                          onClick={() => handleRoomGalleryOpen(room)}
+                        />
+                      </Flex>
+                    </Box>
+                  ))}
+                </Stack>
+              )}
             </Box>
           </Box>
           
@@ -272,6 +369,34 @@ function HotelDetail() {
                   <Image 
                     src={image} 
                     alt={`${hotel.name} - Imagen ${index + 1}`}
+                    w="full"
+                    h="300px"
+                    objectFit="cover"
+                  />
+                </Box>
+              ))}
+            </SimpleGrid>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal de galería de habitación */}
+      <Modal isOpen={isRoomGalleryOpen} onClose={onRoomGalleryClose} size="6xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Galería de Imágenes - Habitación {selectedRoom?.type}</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody p={0}>
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={4} p={4}>
+              {selectedRoom?.images?.map((image, index) => (
+                <Box 
+                  key={index} 
+                  borderRadius="lg" 
+                  overflow="hidden"
+                >
+                  <Image 
+                    src={image} 
+                    alt={`Habitación ${selectedRoom?.type} - Imagen ${index + 1}`}
                     w="full"
                     h="300px"
                     objectFit="cover"

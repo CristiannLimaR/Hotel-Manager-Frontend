@@ -11,11 +11,13 @@ import {
   Icon, 
   useColorModeValue
 } from '@chakra-ui/react'
-import { FiStar, FiMapPin, FiUser } from 'react-icons/fi'
-import { Link as RouterLink } from 'react-router-dom'
-
+import { FiStar, FiMapPin } from 'react-icons/fi'
+import { useNavigate } from 'react-router-dom'
+import { useSearch } from '../../shared/context/SearchContext'
 
 function HotelCard({ hotel }) {
+  const navigate = useNavigate()
+  const { searchParams } = useSearch()
   const {
     uid,
     name,
@@ -30,7 +32,17 @@ function HotelCard({ hotel }) {
   const rating = parseInt(category)
   
   const cardBg = useColorModeValue('white', 'gray.800')
-  const priceBg = useColorModeValue('gray.100', 'gray.700')
+  
+  const handleReserve = () => {
+    const params = new URLSearchParams()
+    if (searchParams.destination) params.set('destination', searchParams.destination)
+    if (searchParams.checkIn) params.set('checkIn', searchParams.checkIn)
+    if (searchParams.checkOut) params.set('checkOut', searchParams.checkOut)
+    if (searchParams.guests) params.set('guests', searchParams.guests)
+
+    const searchString = params.toString()
+    navigate(`/hotels/${uid}${searchString ? `?${searchString}` : ''}`)
+  }
   
   return (
     <Box 
@@ -125,8 +137,7 @@ function HotelCard({ hotel }) {
           </Box>
           
           <Button 
-            as={RouterLink} 
-            to={`/hotels/${uid}`}
+            onClick={handleReserve}
             size="sm" 
             colorScheme="teal" 
             variant="outline"

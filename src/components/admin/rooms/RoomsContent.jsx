@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Box,
   HStack,
@@ -12,107 +12,237 @@ import {
   MenuList,
   MenuItem,
   Grid,
-  Badge,
-  VStack,
   Text,
-  IconButton,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalCloseButton,
-  ModalBody,
-  ModalFooter,
-  Heading,
-  Divider,
-  GridItem,
+  useDisclosure,
+  useToast,
 } from "@chakra-ui/react";
-import {
-  FiSearch,
-  FiFilter,
-  FiRefreshCw,
-  FiEdit,
-  FiTrash2,
-  FiPlus,
-} from "react-icons/fi";
+import { FiSearch, FiFilter, FiRefreshCw, FiPlus } from "react-icons/fi";
+
+import useRooms from "../../../shared/hooks/userRooms";
+import RoomCard from "./RoomCard";
+import AddEditRoomModal from "./AddEditRoomModal";
+import RoomDetailsModal from "./RoomDetailsModal";
+import ConfirmationModal from "./ConfirmationModal";
 
 const RoomsContent = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState(null);
-  const [rooms, setRooms] = useState([
-    {
-      type: "Deluxe",
-      capacity: 2,
-      price_per_night: 150.99,
-      hotel_id: "681aca0b6c38a92a345e2970",
-      available: true,
-      state: true,
-      nonAvailability: [],
-      createdAt: "2025-05-15T15:24:27.486Z",
-      updatedAt: "2025-05-15T15:24:27.486Z",
-      uid: "6826072b257515c523f67441"
-    }
-  ]);
-  const [filteredRooms, setFilteredRooms] = useState(rooms);
+  const {
+    loading,
+    getRooms,
+    createNewRoom,
+    editRoom,
+    toggleRoom
+  } = useRooms();
+
+  const [rooms, setRooms] = useState([]);
+  const [filteredRooms, setFilteredRooms] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("Todas");
+  const [availabilityFilter, setAvailabilityFilter] = useState("Todas");
   const [typeFilter, setTypeFilter] = useState("Todos los Tipos");
+  const [stateFilter, setStateFilter] = useState("Todas");
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [roomInQuestion, setRoomInQuestion] = useState(null);
+  const [actionType, setActionType] = useState(null);
 
-  const handleViewDetails = (room) => {
-    setSelectedRoom(room);
-    setIsModalOpen(true);
-  };
+  const { isOpen: isAddEditModalOpen, onOpen: onOpenAddEditModal, onClose: onCloseAddEditModal } = useDisclosure();
+  const { isOpen: isDetailModalOpen, onOpen: onOpenDetailModal, onClose: onCloseDetailModal } = useDisclosure();
+  const { isOpen: isConfirmOpen, onOpen: onOpenConfirm, onClose: onCloseConfirm } = useDisclosure();
 
-  const handleSearch = (value) => {
-    setSearchTerm(value);
-    filterRooms(value, statusFilter, typeFilter);
-  };
+  const toast = useToast();
 
-  const handleStatusFilter = (status) => {
-    setStatusFilter(status);
-    filterRooms(searchTerm, status, typeFilter);
-  };
+  const fetchRooms = useCallback(async () => {
+    const roomsData = await getRooms();
+    setRooms(roomsData);
+    setFilteredRooms(roomsData);
+  }, []);
 
-  const handleTypeFilter = (type) => {
-    setTypeFilter(type);
-    filterRooms(searchTerm, statusFilter, type);
-  };
+  useEffect(() => {
+    fetchRooms();
+  }, []);
 
-  const filterRooms = (search, status, type) => {
-    let filtered = rooms;
+  const applyFilters = useCallback(() => {
+    let filtered = [...rooms];
 
-    if (search) {
+    
+    if (searchTerm) {
       filtered = filtered.filter(room => 
-        room.type.toLowerCase().includes(search.toLowerCase()) ||
-        room.uid.toLowerCase().includes(search.toLowerCase())
+        room.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        room.uid.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    if (status !== "Todas") {
+    // Aplicar filtro de disponibilidad (available)
+    if (availabilityFilter !== "Todas") {
       filtered = filtered.filter(room => {
-        if (status === "Disponibles") return room.available;
-        if (status === "No Disponibles") return !room.available;
+        if (availabilityFilter === "Activadas") return room.available;
+        if (availabilityFilter === "Desactivadas") return !room.available;
         return true;
       });
     }
 
-    if (type !== "Todos los Tipos") {
-      filtered = filtered.filter(room => room.type === type);
+    // Aplicar filtro de tipo
+    if (typeFilter !== "Todos los Tipos") {
+      filtered = filtered.filter(room => room.type === typeFilter);
+    }
+
+    // Aplicar filtro de estado (state)
+    if (stateFilter !== "Todas") {
+      filtered = filtered.filter(room => {
+        if (stateFilter === "Activas") return room.state;
+        if (stateFilter === "Inactivas") return !room.state;
+        return true;
+      });
     }
 
     setFilteredRooms(filtered);
+  }, [rooms, searchTerm, availabilityFilter, typeFilter, stateFilter]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
+
+  const handleSearch = (value) => {
+    setSearchTerm(value);
+  };
+
+  const handleAvailabilityFilter = (value) => {
+    setAvailabilityFilter(value);
+  };
+
+  const handleTypeFilter = (value) => {
+    setTypeFilter(value);
+  };
+
+  const handleStateFilter = (value) => {
+    setStateFilter(value);
+  };
+
+  const handleOpenAddModal = () => {
+    setIsEditing(false);
+    setSelectedRoom(null);
+    onOpenAddEditModal();
+  };
+
+  const handleOpenEditModal = (room) => {
+    if (!room.available) {
+      toast({
+        title: "No se puede editar",
+        description: "No se puede editar una habitación que no está disponible.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+    setIsEditing(true);
+    setSelectedRoom(room);
+    onOpenAddEditModal();
+  };
+
+  const handleSaveRoom = async (uid, roomData) => {
+    try {
+      let response;
+      if (uid) {
+        response = await editRoom(uid, roomData);
+        if (response.error) {
+          toast({
+            title: "Error al editar",
+            description: "No se pudo editar la habitación. Por favor, intente nuevamente.",
+            status: "error",
+            duration: 3000,
+            isClosable: true,
+          });
+          return false;
+        }
+        toast({
+          title: "Habitación actualizada",
+          description: "La habitación se ha actualizado correctamente.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        response = await createNewRoom(roomData);
+        if (response.error) {
+          toast({
+            title: "Error al crear",
+            description: "No se pudo crear la habitación. Por favor, intente nuevamente.",
+            status: "error",
+            duration: 3000,
+            isClosable: true,
+          });
+          return false;
+        }
+        toast({
+          title: "Habitación creada",
+          description: "La habitación se ha creado correctamente.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+
+      await fetchRooms();
+      return true;
+    } catch (error) {
+      console.error("Error al guardar la habitación:", error);
+      toast({
+        title: "Error",
+        description: "Ha ocurrido un error inesperado. Por favor, intente nuevamente.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return false;
+    }
+  };
+
+  const handleViewDetails = (room) => {
+    setSelectedRoom(room);
+    onOpenDetailModal();
+  };
+
+  const handleConfirmAction = async () => {
+    try {
+      if (actionType === "toggleState") {
+        console.log("Habitación a modificar:", roomInQuestion);
+        const response = await toggleRoom(roomInQuestion.uid, !roomInQuestion.available);
+        console.log("Respuesta del servidor:", response);
+        if (response.error) {
+          toast({
+            title: "Error",
+            description: "No se pudo cambiar el estado de la habitación.",
+            status: "error",
+            duration: 3000,
+            isClosable: true,
+          });
+        } else {
+          await fetchRooms();
+        }
+      }
+      onCloseConfirm();
+    } catch (error) {
+      console.error("Error al realizar la acción:", error);
+      toast({
+        title: "Error",
+        description: "Ha ocurrido un error inesperado. Por favor, intente nuevamente.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   return (
-    <Box>
-      <HStack justify="space-between" mb={6}>
-        <HStack>
-          <InputGroup w="300px">
+    <Box p={6}>
+      <HStack justify="space-between" mb={6} flexWrap="wrap">
+        <HStack spacing={3} flexWrap="wrap">
+          <InputGroup w={{ base: "full", md: "300px" }}>
             <InputLeftElement pointerEvents="none">
               <Icon as={FiSearch} color="gray.400" />
             </InputLeftElement>
-            <Input 
-              placeholder="Buscar habitaciones..." 
+            <Input
+              placeholder="Buscar habitaciones..."
               borderRadius="md"
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
@@ -120,12 +250,18 @@ const RoomsContent = () => {
           </InputGroup>
           <Menu>
             <MenuButton as={Button} rightIcon={<FiFilter />} variant="outline">
-              Estado: {statusFilter}
+              Disponibilidad: {availabilityFilter}
             </MenuButton>
             <MenuList>
-              <MenuItem onClick={() => handleStatusFilter("Todas")}>Todas</MenuItem>
-              <MenuItem onClick={() => handleStatusFilter("Disponibles")}>Disponibles</MenuItem>
-              <MenuItem onClick={() => handleStatusFilter("No Disponibles")}>No Disponibles</MenuItem>
+              <MenuItem onClick={() => handleAvailabilityFilter("Todas")}>
+                Todas
+              </MenuItem>
+              <MenuItem onClick={() => handleAvailabilityFilter("Activadas")}>
+                Disponibles
+              </MenuItem>
+              <MenuItem onClick={() => handleAvailabilityFilter("Desactivadas")}>
+                No Disponibles
+              </MenuItem>
             </MenuList>
           </Menu>
           <Menu>
@@ -133,149 +269,99 @@ const RoomsContent = () => {
               Tipo: {typeFilter}
             </MenuButton>
             <MenuList>
-              <MenuItem onClick={() => handleTypeFilter("Todos los Tipos")}>Todos los Tipos</MenuItem>
-              <MenuItem onClick={() => handleTypeFilter("Deluxe")}>Deluxe</MenuItem>
-              <MenuItem onClick={() => handleTypeFilter("Suite")}>Suite</MenuItem>
-              <MenuItem onClick={() => handleTypeFilter("Estándar")}>Estándar</MenuItem>
+              <MenuItem onClick={() => handleTypeFilter("Todos los Tipos")}>
+                Todos los Tipos
+              </MenuItem>
+              <MenuItem onClick={() => handleTypeFilter("Deluxe")}>
+                Deluxe
+              </MenuItem>
+              <MenuItem onClick={() => handleTypeFilter("Suite")}>
+                Suite
+              </MenuItem>
+              <MenuItem onClick={() => handleTypeFilter("Estándar")}>
+                Estándar
+              </MenuItem>
+            </MenuList>
+          </Menu>
+          <Menu>
+            <MenuButton as={Button} rightIcon={<FiFilter />} variant="outline">
+              Estado: {stateFilter}
+            </MenuButton>
+            <MenuList>
+              <MenuItem onClick={() => handleStateFilter("Todas")}>
+                Todas
+              </MenuItem>
+              <MenuItem onClick={() => handleStateFilter("Activas")}>
+                Activadas
+              </MenuItem>
+              <MenuItem onClick={() => handleStateFilter("Inactivas")}>
+                Desactivadas
+              </MenuItem>
             </MenuList>
           </Menu>
         </HStack>
-        <Button colorScheme="blue" leftIcon={<FiRefreshCw />}>
-          Actualizar Estado
-        </Button>
-        <Button colorScheme="blue" leftIcon={<FiPlus />}>
-          Crear Habitación
-        </Button>
+        <HStack spacing={3} mt={{ base: 4, md: 0 }}>
+          <Button
+            colorScheme="blue"
+            leftIcon={<FiRefreshCw />}
+            onClick={fetchRooms}
+            isLoading={loading}
+          >
+            Recargar Habitaciones
+          </Button>
+          <Button colorScheme="blue" leftIcon={<FiPlus />} onClick={handleOpenAddModal}>
+            Crear Habitación
+          </Button>
+        </HStack>
       </HStack>
 
-      <Grid templateColumns="repeat(4, 1fr)" gap={4}>
-        {filteredRooms.map((room) => (
-          <Box 
-            key={room.uid}
-            borderWidth="1px" 
-            borderRadius="lg" 
-            overflow="hidden"
-            borderColor="blue.200"
-            bg="white"
-          >
-            <Box p="4">
-              <HStack justify="space-between" mb={2}>
-                <Heading size="md">Habitación {room.type}</Heading>
-                <Badge colorScheme={room.available ? "green" : "red"}>
-                  {room.available ? "Disponible" : "No Disponible"}
-                </Badge>
-              </HStack>
-              <Text fontSize="sm" color="gray.500">ID: {room.uid}</Text>
-              <Divider my={2} />
-              <VStack align="start" spacing={2}>
-                <HStack justify="space-between" w="full">
-                  <Text fontSize="sm">Capacidad:</Text>
-                  <Text fontSize="sm" fontWeight="bold">{room.capacity} personas</Text>
-                </HStack>
-                <HStack justify="space-between" w="full">
-                  <Text fontSize="sm">Precio por noche:</Text>
-                  <Text fontSize="sm" fontWeight="bold">${room.price_per_night}</Text>
-                </HStack>
-                <HStack justify="space-between" w="full">
-                  <Text fontSize="sm">Estado:</Text>
-                  <Badge colorScheme={room.state ? "green" : "red"}>
-                    {room.state ? "Activa" : "Inactiva"}
-                  </Badge>
-                </HStack>
-                <HStack justify="space-between" w="full">
-                  <Text fontSize="sm">Creada:</Text>
-                  <Text fontSize="sm">{new Date(room.createdAt).toLocaleDateString()}</Text>
-                </HStack>
-              </VStack>
-              <HStack mt={4} spacing={2}>
-                <Button 
-                  size="sm" 
-                  w="full" 
-                  colorScheme="blue" 
-                  variant="outline"
-                  onClick={() => handleViewDetails(room)}
-                >
-                  Ver Detalles
-                </Button>
-                <IconButton 
-                  aria-label="Editar habitación" 
-                  icon={<FiEdit />} 
-                  size="sm" 
-                  colorScheme="yellow" 
-                  variant="outline" 
-                />
-                <IconButton 
-                  aria-label="Eliminar habitación" 
-                  icon={<FiTrash2 />} 
-                  size="sm" 
-                  colorScheme="red" 
-                  variant="outline" 
-                />
-              </HStack>
-            </Box>
-          </Box>
-        ))}
-      </Grid>
+      {loading ? (
+        <Text>Cargando habitaciones...</Text>
+      ) : filteredRooms.length === 0 ? (
+        <Text fontSize="lg" textAlign="center" py={10} color="gray.500">
+          No hay habitaciones disponibles.
+        </Text>
+      ) : (
+        <Grid templateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={6}>
+          {filteredRooms.map((room) => (
+            <RoomCard
+              key={room.uid}
+              room={room}
+              onViewDetails={handleViewDetails}
+              onEdit={handleOpenEditModal}
+              onToggleState={(room) => {
+                setRoomInQuestion(room);
+                setActionType("toggleState");
+                onOpenConfirm();
+              }}
+            />
+          ))}
+        </Grid>
+      )}
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} size="xl">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Detalles de la Habitación</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            {selectedRoom && (
-              <Grid templateColumns="repeat(2, 1fr)" gap={6}>
-                <GridItem>
-                  <VStack align="start" spacing={4}>
-                    <Box>
-                      <Text fontWeight="bold">Información General</Text>
-                      <Text>Tipo: {selectedRoom.type}</Text>
-                      <Text>ID: {selectedRoom.uid}</Text>
-                      <Text>Hotel ID: {selectedRoom.hotel_id}</Text>
-                    </Box>
-                    <Box>
-                      <Text fontWeight="bold">Capacidad y Precios</Text>
-                      <Text>Capacidad: {selectedRoom.capacity} personas</Text>
-                      <Text>Precio por noche: ${selectedRoom.price_per_night}</Text>
-                    </Box>
-                  </VStack>
-                </GridItem>
-                <GridItem>
-                  <VStack align="start" spacing={4}>
-                    <Box>
-                      <Text fontWeight="bold">Estado</Text>
-                      <HStack spacing={2}>
-                        <Badge colorScheme={selectedRoom.available ? "green" : "red"}>
-                          {selectedRoom.available ? "Disponible" : "No Disponible"}
-                        </Badge>
-                        <Badge colorScheme={selectedRoom.state ? "green" : "red"}>
-                          {selectedRoom.state ? "Activa" : "Inactiva"}
-                        </Badge>
-                      </HStack>
-                    </Box>
-                    <Box>
-                      <Text fontWeight="bold">Fechas</Text>
-                      <Text>Creada: {new Date(selectedRoom.createdAt).toLocaleDateString()}</Text>
-                      <Text>Última actualización: {new Date(selectedRoom.updatedAt).toLocaleDateString()}</Text>
-                    </Box>
-                    <Box>
-                      <Text fontWeight="bold">Disponibilidad</Text>
-                      <Text>Períodos no disponibles: {selectedRoom.nonAvailability.length}</Text>
-                    </Box>
-                  </VStack>
-                </GridItem>
-              </Grid>
-            )}
-          </ModalBody>
-          <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={() => setIsModalOpen(false)}>
-              Cerrar
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <AddEditRoomModal
+        isOpen={isAddEditModalOpen}
+        onClose={onCloseAddEditModal}
+        roomToEdit={selectedRoom}
+        onSave={handleSaveRoom}
+      />
+
+      <RoomDetailsModal
+        isOpen={isDetailModalOpen}
+        onClose={onCloseDetailModal}
+        room={selectedRoom}
+      />
+
+      <ConfirmationModal
+        isOpen={isConfirmOpen}
+        onClose={onCloseConfirm}
+        actionType={actionType}
+        roomInQuestion={roomInQuestion}
+        onConfirm={handleConfirmAction}
+        roomState={rooms.find(r => r.uid === roomInQuestion?.uid)?.state}
+      />
     </Box>
   );
 };
 
-export default RoomsContent; 
+export default RoomsContent;
