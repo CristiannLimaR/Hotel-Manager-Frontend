@@ -69,6 +69,31 @@ const UsersContent = () => {
   const [formEmail, setFormEmail] = useState("");
   const [formRole, setFormRole] = useState("user");
   
+  const getRoleColor = (role) => {
+    switch (role) {
+      case 'ADMIN_ROLE':
+        return 'teal';
+      case 'MANAGER_ROLE':
+        return 'orange';
+      case 'USER_ROLE':
+        return 'green';
+      default:
+        return 'gray';
+    }
+  };
+
+  const getRoleLabel = (role) => {
+    switch (role) {
+      case 'ADMIN_ROLE':
+        return 'Administrador';
+      case 'MANAGER_ROLE':
+        return 'Admin de Hotel';
+      case 'USER_ROLE':
+        return 'Usuario';
+      default:
+        return role;
+    }
+  };
 
   // modal para editar usuario
   const handleEditClick = (user) => {
@@ -134,32 +159,6 @@ const UsersContent = () => {
   });
 
   console.log(users)
-
-  const getRoleColor = (role) => {
-    switch (role) {
-      case 'ADMIN_ROLE':
-        return 'teal';
-      case 'MANAGER_ROLE':
-        return 'orange';
-      case 'USER_ROLE':
-        return 'green';
-      default:
-        return 'gray';
-    }
-  };
-
-  const getRoleLabel = (role) => {
-    switch (role) {
-      case 'ADMIN_ROLE':
-        return 'Administrador';
-      case 'MANAGER_ROLE':
-        return 'Admin de Hotel';
-      case 'USER_ROLE':
-        return 'Usuario';
-      default:
-        return role;
-    }
-  };
 
   return (
     <Box>

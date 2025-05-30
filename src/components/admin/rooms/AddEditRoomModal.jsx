@@ -152,6 +152,12 @@ const AddEditRoomModal = ({ isOpen, onClose, roomToEdit, onSave }) => {
 
     const success = await onSave(isEditing ? roomToEdit.uid : null, formData);
     if (success) {
+      // Limpiar las imágenes después de un guardado exitoso
+      setNewImages([]);
+      setPreviewUrls([]);
+      if (!isEditing) {
+        setExistingImages([]);
+      }
       toast({
         title: isEditing ? "Habitación actualizada" : "Habitación creada",
         description: "La operación se completó exitosamente",

@@ -225,10 +225,6 @@ import {
                     value: 100,
                     message: 'El nombre no puede exceder los 100 caracteres',
                   },
-                  pattern: {
-                    value: /^[a-zA-Z0-9\s\-_]+$/,
-                    message: 'El nombre solo puede contener letras, números, espacios, guiones y guiones bajos',
-                  },
                 })}
                 placeholder="Ingrese el nombre del hotel"
               />

@@ -28,7 +28,7 @@ function Hotels() {
   const [hotels, setHotels] = useState([])
   const [filteredHotels, setFilteredHotels] = useState([])
   const [filters, setFilters] = useState({
-    priceRange: [500, 3000],
+    priceRange: [0, 10000],
     category: '',
     facilities: []
   })
@@ -39,6 +39,7 @@ function Hotels() {
     const fetchHotels = async () => {
       const response = await getHotels()
       setHotels(response)
+      console.log(response)
       setFilteredHotels(response)
     }
     fetchHotels()
@@ -139,7 +140,9 @@ function Hotels() {
     // Filter by facilities
     if (filters.facilities.length > 0) {
       results = results.filter(hotel => 
-        filters.facilities.every(facility => hotel.facilities.includes(facility))
+        filters.facilities.every(facility => 
+          hotel.facilities && hotel.facilities.includes(facility)
+        )
       )
     }
     
@@ -148,7 +151,7 @@ function Hotels() {
   
   const resetFilters = () => {
     setFilters({
-      priceRange: [500, 3000],
+      priceRange: [0, 1000],
       category: '',
       facilities: []
     })
@@ -236,8 +239,8 @@ function Hotels() {
                     <Text fontSize="sm">${filters.priceRange[1]}</Text>
                   </Flex>
                   <RangeSlider
-                    min={500}
-                    max={3000}
+                    min={0}
+                    max={1000}
                     step={100}
                     value={filters.priceRange}
                     onChange={handlePriceChange}

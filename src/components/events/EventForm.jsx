@@ -121,9 +121,10 @@ const EventForm = ({ onSuccess, eventData = null, isAdmin = false }) => {
         tipo_evento: data.type,
         hotel_id: isAdmin ? eventData?.hotel : data.hotel
       };
+      console.log(formattedData)
       
       if (onSuccess) {
-        await onSuccess(formattedData);
+        await onSuccess(formattedData, formattedData.hotel_id);
       }
     } catch (err) {
       console.error('Error al guardar evento:', err);

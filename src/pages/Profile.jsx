@@ -38,7 +38,7 @@ function Profile() {
   const { isOpen: isPasswordOpen, onOpen: onPasswordOpen, onClose: handlePasswordClose } = useDisclosure()
   const toast = useToast()
   const user = useAuthStore((state) => state.user)
-  console.log(user)
+  const updateUserStore = useAuthStore((state) => state.updateUser)
   const { logout } = useLogin()
   const { updateUser, updatePassword } = useUsers()
 
@@ -71,8 +71,8 @@ function Profile() {
 
   const onSubmitEdit = async (data) => {
     try {
-      
       await updateUser(user.id, data)
+      updateUserStore(data)
       toast({
         title: 'Perfil actualizado',
         description: 'Tus datos han sido actualizados correctamente',

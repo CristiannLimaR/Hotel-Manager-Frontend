@@ -60,7 +60,7 @@ import InvoiceTemplate from '../components/admin/invoices/InvoiceTemplate'
 dayjs.extend(isSameOrAfter)
 dayjs.extend(isSameOrBefore)
 
-function BookingCard({ booking }) {
+function BookingCard({ booking, onReservationUpdate }) {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { isOpen: isServicesOpen, onOpen: onServicesOpen, onClose: onServicesClose } = useDisclosure()
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure()
@@ -142,8 +142,7 @@ function BookingCard({ booking }) {
       };
 
       await editReservation(booking._id, reservationData);
-      
-      
+      onReservationUpdate();
       onEditClose();
     } catch (error) {
       toast({
@@ -182,6 +181,7 @@ function BookingCard({ booking }) {
   
   const handleCancelBooking = () => {
     deleteReservation(booking._id)
+    onReservationUpdate();
     onClose()
   }
 
@@ -703,10 +703,10 @@ function MyBookings() {
   useEffect(() => {
     fetchReservations()
   }, [])
+
   const activeBookings = reservations?.filter(booking => booking.status === 'active')
   const completedBookings = reservations?.filter(booking => booking.status === 'completed')
   const cancelledBookings = reservations?.filter(booking => booking.status === 'cancelled')
-  
   
   return (
     <Box pt={24} pb={16}>
@@ -748,7 +748,11 @@ function MyBookings() {
               ) : (
                 <VStack spacing={6} align="stretch">
                   {activeBookings.map(booking => (
-                    <BookingCard key={booking.uid} booking={booking} />
+                    <BookingCard 
+                      key={booking.uid} 
+                      booking={booking} 
+                      onReservationUpdate={fetchReservations}
+                    />
                   ))}
                 </VStack>
               )}
@@ -775,7 +779,11 @@ function MyBookings() {
               ) : (
                 <VStack spacing={6} align="stretch">
                   {completedBookings.map(booking => (
-                    <BookingCard key={booking.id} booking={booking} />
+                    <BookingCard 
+                      key={booking.id} 
+                      booking={booking} 
+                      onReservationUpdate={fetchReservations}
+                    />
                   ))}
                 </VStack>
               )}
@@ -795,7 +803,11 @@ function MyBookings() {
               ) : (
                 <VStack spacing={6} align="stretch">
                   {cancelledBookings.map(booking => (
-                    <BookingCard key={booking.id} booking={booking} />
+                    <BookingCard 
+                      key={booking.id} 
+                      booking={booking} 
+                      onReservationUpdate={fetchReservations}
+                    />
                   ))}
                 </VStack>
               )}

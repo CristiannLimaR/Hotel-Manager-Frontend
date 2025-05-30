@@ -99,29 +99,18 @@ const ReservationsContent = () => {
 
   useEffect(() => {
     const fetchReservations = async () => {
-      try {
-        const reservations = await getReservations();
-        // Filtrar las reservaciones por el hotel actual
+      if (!hotel?.uid) return;
+      
+      const reservations = await getReservations();
+      if (reservations) {
         const hotelReservations = reservations.filter(reservation => 
-          reservation.hotel === hotel?.uid
+          reservation.hotel.uid === hotel.uid
         );
         setReservations(hotelReservations);
         setFilteredReservations(hotelReservations);
-      } catch (error) {
-        console.error('Error al cargar las reservaciones:', error);
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar las reservaciones",
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-        });
       }
     };
-    
-    if (hotel?.uid) {
-      fetchReservations();
-    }
+    fetchReservations();
   }, [hotel]);
 
   useEffect(() => {
@@ -148,6 +137,16 @@ const ReservationsContent = () => {
       try {
         const hotelData = await getHotelsByAdmin();
         console.log('Hotel cargado:', hotelData);
+        if (hotelData?.rooms) {
+          console.log('Habitaciones del hotel:', hotelData.rooms.length);
+          hotelData.rooms.forEach(room => {
+            console.log('Habitación:', {
+              id: room._id,
+              type: room.type,
+              nonAvailabilityCount: room.nonAvailability?.length || 0
+            });
+          });
+        }
         setHotel(hotelData);
       } catch (error) {
         console.error('Error al cargar el hotel:', error);
@@ -188,8 +187,13 @@ const ReservationsContent = () => {
       
       await createInvoice({ reservationId: reservation._id});
       const updatedReservations = await getReservations();
-      setReservations(updatedReservations);
-      setFilteredReservations(updatedReservations);
+      if (updatedReservations) {
+        const hotelReservations = updatedReservations.filter(res => 
+          res.hotel.uid === hotel.uid
+        );
+        setReservations(hotelReservations);
+        setFilteredReservations(hotelReservations);
+      }
 
     } catch {
       toast({
@@ -214,8 +218,13 @@ const ReservationsContent = () => {
       });
       onDeleteModalClose();
       const updatedReservations = await getReservations();
-      setReservations(updatedReservations);
-      setFilteredReservations(updatedReservations);
+      if (updatedReservations) {
+        const hotelReservations = updatedReservations.filter(res => 
+          res.hotel.uid === hotel.uid
+        );
+        setReservations(hotelReservations);
+        setFilteredReservations(hotelReservations);
+      }
     } catch {
       toast({
         title: "Error",
@@ -273,8 +282,13 @@ const ReservationsContent = () => {
       });
       onEditModalClose();
       const updatedReservations = await getReservations();
-      setReservations(updatedReservations);
-      setFilteredReservations(updatedReservations);
+      if (updatedReservations) {
+        const hotelReservations = updatedReservations.filter(res => 
+          res.hotel.uid === hotel.uid
+        );
+        setReservations(hotelReservations);
+        setFilteredReservations(hotelReservations);
+      }
     } catch {
       toast({
         title: "Error",
@@ -377,37 +391,98 @@ const ReservationsContent = () => {
 
   const handleNewDateChange = (dates) => {
     const [start, end] = dates;
+    
+    console.log('Fechas seleccionadas:', { start, end });
+    
+    // Actualizar el estado con las nuevas fechas
     setNewReservationData(prev => ({
       ...prev,
       checkInDate: start,
-      checkOutDate: end,
-      roomId: '' // Resetear la habitación seleccionada cuando cambian las fechas
+      checkOutDate: end
     }));
     
-    // Filtrar habitaciones disponibles para las fechas seleccionadas
-    if (hotel?.rooms) {
+    // Solo filtrar habitaciones si tenemos ambas fechas válidas
+    if (start && end && hotel?.rooms) {
+      console.log('Total de habitaciones en el hotel:', hotel.rooms.length);
+      
       const available = hotel.rooms.filter(room => {
-        // Verificar si la habitación está disponible para las fechas seleccionadas
-        const isAvailable = !room.reservations?.some(reservation => {
-          if (reservation.status === 'cancelled') return false; // Ignorar reservas canceladas
+        console.log('Evaluando habitación:', {
+          roomId: room._id,
+          type: room.type,
+          nonAvailabilityCount: room.nonAvailability?.length || 0
+        });
+
+        // Verificar si hay fechas no disponibles que se solapan
+        const hasNonAvailability = room.nonAvailability?.some(period => {
+          const periodStart = new Date(period.start);
+          const periodEnd = new Date(period.end);
           
+          const hasOverlap = (
+            (start < periodEnd && end > periodStart) || // Solapamiento parcial
+            (start >= periodStart && end <= periodEnd) || // Reserva dentro del rango
+            (start <= periodStart && end >= periodEnd) // Reserva dentro del rango seleccionado
+          );
+
+          if (hasOverlap) {
+            console.log('Habitación con período no disponible:', {
+              roomId: room._id,
+              periodStart: periodStart,
+              periodEnd: periodEnd
+            });
+          }
+
+          return hasOverlap;
+        });
+
+        if (hasNonAvailability) {
+          console.log('Habitación no disponible por período:', room._id);
+          return false;
+        }
+
+        // Verificar si hay reservas activas que se solapan
+        const hasActiveReservations = room.reservations?.some(reservation => {
+          if (reservation.status !== 'active') {
+            return false;
+          }
+
           const resStart = new Date(reservation.checkInDate);
           const resEnd = new Date(reservation.checkOutDate);
-          
-          // Verificar si hay solapamiento de fechas
-          return (
-            (start >= resStart && start < resEnd) || // El check-in está dentro de una reserva existente
-            (end > resStart && end <= resEnd) || // El check-out está dentro de una reserva existente
-            (start <= resStart && end >= resEnd) // La nueva reserva engloba una reserva existente
+
+          const hasOverlap = (
+            (start < resEnd && end > resStart) || // Solapamiento parcial
+            (start >= resStart && end <= resEnd) || // Reserva dentro del rango
+            (start <= resStart && end >= resEnd) // Reserva dentro del rango seleccionado
           );
+
+          if (hasOverlap) {
+            console.log('Habitación con reserva activa:', {
+              roomId: room._id,
+              reservationStart: resStart,
+              reservationEnd: resEnd
+            });
+          }
+
+          return hasOverlap;
         });
-        
-        // Verificar también la capacidad de la habitación
-        return isAvailable && room.available;
+
+        if (hasActiveReservations) {
+          console.log('Habitación no disponible por reserva activa:', room._id);
+          return false;
+        }
+
+        console.log('Habitación disponible:', room._id);
+        return true;
       });
-      
+
+      console.log('Habitaciones disponibles final:', available.length);
       setAvailableRooms(available);
     } else {
+      console.log('No se pueden filtrar habitaciones:', {
+        hasStart: !!start,
+        hasEnd: !!end,
+        hasHotel: !!hotel,
+        hasRooms: !!(hotel?.rooms)
+      });
       setAvailableRooms([]);
     }
   };
@@ -456,7 +531,7 @@ const ReservationsContent = () => {
       
       // Asegurarnos de que los datos estén en el formato correcto
       const reservationData = {
-        user: newReservationData.userId,
+        userId: newReservationData.userId,
         hotel: hotel.uid,
         room: newReservationData.roomId,
         checkInDate: newReservationData.checkInDate.toISOString(),
@@ -484,8 +559,13 @@ const ReservationsContent = () => {
       
       onNewModalClose();
       const updatedReservations = await getReservations();
-      setReservations(updatedReservations);
-      setFilteredReservations(updatedReservations);
+      if (updatedReservations) {
+        const hotelReservations = updatedReservations.filter(res => 
+          res.hotel.uid === hotel.uid
+        );
+        setReservations(hotelReservations);
+        setFilteredReservations(hotelReservations);
+      }
     } catch (error) {
       console.error('Error al crear la reservación:', error);
       toast({
@@ -928,6 +1008,7 @@ const ReservationsContent = () => {
                       dateFormat="dd/MM/yyyy"
                       showPopperArrow={false}
                       calendarStartDay={1}
+                      onChangeRaw={(e) => e.preventDefault()}
                     />
                   </Box>
                 </FormControl>
@@ -948,8 +1029,8 @@ const ReservationsContent = () => {
                       ))}
                     </Select>
                   ) : (
-                    <Text color="red.500">
-                      No hay habitaciones disponibles para las fechas seleccionadas. Por favor, selecciona otras fechas.
+                    <Text color="gray.500">
+                      No hay habitaciones disponibles para las fechas seleccionadas
                     </Text>
                   )}
                 </FormControl>
@@ -974,6 +1055,33 @@ const ReservationsContent = () => {
                   </Select>
                 </FormControl>
 
+                <FormControl>
+                  <FormLabel>Servicios Adicionales</FormLabel>
+                  <CheckboxGroup 
+                    colorScheme="teal" 
+                    onChange={(selectedServices) => {
+                      setNewReservationData(prev => ({
+                        ...prev,
+                        services: selectedServices.map(serviceId => ({
+                          service: serviceId,
+                          quantity: 1
+                        }))
+                      }));
+                    }}
+                  >
+                    <Stack spacing={2}>
+                      {hotel?.services?.map(service => (
+                        <Checkbox 
+                          key={service._id} 
+                          value={service._id}
+                        >
+                          {service.name} - ${service.price}
+                        </Checkbox>
+                      ))}
+                    </Stack>
+                  </CheckboxGroup>
+                </FormControl>
+
                 <Box p={4} borderWidth="1px" borderRadius="md" bg="gray.50">
                   <VStack spacing={4} align="stretch">
                     <Text fontWeight="bold">Resumen de la Reserva</Text>
@@ -990,11 +1098,31 @@ const ReservationsContent = () => {
                           <Text>{calculateNewNights()}</Text>
                         </HStack>
                         
+                        {newReservationData.services.length > 0 && (
+                          <>
+                            <Divider />
+                            <Text fontWeight="medium">Servicios Adicionales:</Text>
+                            {newReservationData.services.map(({ service: serviceId }) => {
+                              const service = hotel?.services?.find(s => s._id === serviceId);
+                              return (
+                                <HStack key={serviceId} justify="space-between">
+                                  <Text fontSize="sm">{service?.name}</Text>
+                                  <Text fontSize="sm">${service?.price}</Text>
+                                </HStack>
+                              );
+                            })}
+                          </>
+                        )}
+                        
                         <Divider />
                         <HStack justify="space-between" fontWeight="bold">
                           <Text>Total</Text>
                           <Text color="teal.500">
-                            ${calculateNewNights() * (availableRooms.find(r => r._id === newReservationData.roomId)?.price_per_night || 0)}
+                            ${calculateNewNights() * (availableRooms.find(r => r._id === newReservationData.roomId)?.price_per_night || 0) + 
+                              newReservationData.services.reduce((total, { service: serviceId }) => {
+                                const service = hotel?.services?.find(s => s._id === serviceId);
+                                return total + (service?.price || 0);
+                              }, 0)}
                           </Text>
                         </HStack>
                       </>

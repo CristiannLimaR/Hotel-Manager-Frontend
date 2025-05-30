@@ -12,11 +12,11 @@ const EventFormModal = ({
   isOpen,
   onClose,
   form,
-  editingEventId
+  editingEventId,
+  onSuccess
 }) => {
   const handleSuccess = async (formattedData) => {
-    // Aquí manejamos el éxito del formulario
-    onClose();
+    await onSuccess(editingEventId, formattedData);
   };
 
   return (

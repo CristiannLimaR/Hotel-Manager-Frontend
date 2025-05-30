@@ -73,7 +73,7 @@ const InvoicesContent = () => {
         format: 'a4'
       });
 
-      const imgWidth = 210; // A4 width in mm
+      const imgWidth = 210;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
@@ -83,13 +83,6 @@ const InvoicesContent = () => {
       onClose();
     } catch (error) {
       console.error('Error al generar el PDF:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo generar el PDF de la factura",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
     }
   };
 
@@ -146,40 +139,6 @@ const InvoicesContent = () => {
       filtered = filtered.filter(invoice => invoice.statusInvoice === status.toUpperCase());
     }
 
-    // Filtrar por rango de fechas
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
-
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-    const startOfQuarter = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1);
-
-    filtered = filtered.filter(invoice => {
-      const checkInDate = new Date(invoice.reservation.checkInDate);
-      const checkOutDate = new Date(invoice.reservation.checkOutDate);
-      checkInDate.setHours(0, 0, 0, 0);
-      checkOutDate.setHours(0, 0, 0, 0);
-
-      switch (range) {
-        case "today":
-          return checkInDate.getTime() === today.getTime() || 
-                 (checkInDate <= today && checkOutDate >= today);
-        case "week":
-          return checkInDate >= startOfWeek || 
-                 (checkInDate <= startOfWeek && checkOutDate >= startOfWeek);
-        case "month":
-          return checkInDate >= startOfMonth || 
-                 (checkInDate <= startOfMonth && checkOutDate >= startOfMonth);
-        case "quarter":
-          return checkInDate >= startOfQuarter || 
-                 (checkInDate <= startOfQuarter && checkOutDate >= startOfQuarter);
-        default:
-          return true;
-      }
-    });
 
     setFilteredInvoices(filtered);
   };
@@ -226,27 +185,6 @@ const InvoicesContent = () => {
               onChange={(e) => handleSearch(e.target.value)}
             />
           </InputGroup>
-          <Menu>
-            <MenuButton as={Button} rightIcon={<FiFilter />} variant="outline">
-              Estado: {statusFilter}
-            </MenuButton>
-            <MenuList>
-              <MenuItem onClick={() => handleStatusFilter("Todas")}>Todas</MenuItem>
-              <MenuItem onClick={() => handleStatusFilter("Paid")}>Pagadas</MenuItem>
-              <MenuItem onClick={() => handleStatusFilter("Pending")}>Pendientes</MenuItem>
-            </MenuList>
-          </Menu>
-          <Select 
-            placeholder="Rango de Fecha" 
-            w="180px"
-            value={dateRange}
-            onChange={(e) => handleDateRange(e.target.value)}
-          >
-            <option value="today">Hoy</option>
-            <option value="week">Esta Semana</option>
-            <option value="month">Este Mes</option>
-            <option value="quarter">Este Trimestre</option>
-          </Select>
         </HStack>
       </HStack>
 

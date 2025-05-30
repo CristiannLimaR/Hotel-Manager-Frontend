@@ -193,17 +193,36 @@ const EventsContent = () => {
       return;
     }
 
-    const success = await updateEvent(eventId, formattedData);
+    let success;
+    if (eventId) {
+      // Actualizar evento existente
+      success = await updateEvent(eventId, formattedData);
+      if (success) {
+        toast({
+          title: "Evento actualizado",
+          description: "El evento fue actualizado exitosamente.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } else {
+      // Crear nuevo evento
+      success = await createEvent(formattedData);
+      if (success) {
+        toast({
+          title: "Evento creado",
+          description: "El evento fue creado exitosamente.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    }
 
     if (success) {
-      toast({
-        title: "Evento actualizado",
-        description: "El evento fue actualizado exitosamente.",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
       fetchEvents(hotelId);
+      closeFormModal();
     }
   };
 
