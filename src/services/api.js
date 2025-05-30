@@ -474,5 +474,26 @@ export const getTotalReservations = async () => {
   }
 }
 
+export const getInvoices = async (hotelId) => {
+  try {
+    const response = await apiClient.get('/invoices', { params: { hotelId } })
+    return response.data
+  } catch (e) {
+    return {
+      error: true,
+      e
+    }
+  }
+}
 
-
+export const createInvoice = async (data) => {
+  try {
+    const response = await apiClient.post('/invoices', data)
+    return response.data
+  } catch (e) {
+    return {
+      error: true,
+      e
+    }
+  }
+}

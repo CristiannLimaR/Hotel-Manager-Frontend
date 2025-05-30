@@ -55,13 +55,13 @@ import {
 import { useReservation } from "../../../shared/hooks/useReservation";
 import useUsers from "../../../shared/hooks/useUsers";
 import useHotel from "../../../shared/hooks/useHotel";
-import useAuthStore from "../../../shared/stores/authStore";
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import es from 'date-fns/locale/es';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import { useInvoices } from "../../../shared/hooks/useInvoices";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -95,6 +95,7 @@ const ReservationsContent = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [availableRooms, setAvailableRooms] = useState([]);
+  const { createInvoice } = useInvoices();
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -167,13 +168,7 @@ const ReservationsContent = () => {
     try {
       await editReservation(reservation._id, { status: 'completed' });
       
-      toast({
-        title: "Reserva completada",
-        description: "La reserva se ha marcado como completada",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
+      await createInvoice({ reservationId: reservation._id});
       const updatedReservations = await getReservations();
       setReservations(updatedReservations);
       setFilteredReservations(updatedReservations);
