@@ -2,7 +2,7 @@ import axios from "axios";
 import useAuthStore from "../shared/stores/authStore";
 
 const apiClient = axios.create({
-  baseURL: "http://127.0.0.1:3000/hotelManager/v1",
+  baseURL: "https://hotel-manager-backend-2yo5.onrender.com",
   timeout: 5000,
 });
 
@@ -11,7 +11,7 @@ export const login = async (data) => {
     const response = await apiClient.post("/auth/login", data);
     const { token, user } = response.data;
 
-    // Guardar en el store de autenticación
+    
     useAuthStore.getState().login(user, token);
 
     return {
